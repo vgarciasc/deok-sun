@@ -2,13 +2,78 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<link rel="stylesheet" type="text/css" href="style.css">
+	<script src="https://d3js.org/d3.v7.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/d3-selection@3"></script>
+	<script src="https://cdn.jsdelivr.net/npm/d3-timer@3"></script>
+	<script src="https://cdn.jsdelivr.net/npm/d3-transition@3"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+	<script src="data/kr_surnames.js"></script>
+	<script src="data/br_surnames.js"></script>
+	<script src="data/kr-m-forenames.js"></script>
+	<script src="data/kr-f-forenames.js"></script>
+	<script src="data/br-m-forenames.js"></script>
+	<script src="data/br-f-forenames.js"></script>
+	<script src="data.js"></script>
+	<script src="utils.js" defer></script>
 	<script src="translator.js" defer></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-	<h1>My First Heading</h1>
-	<p>My first paragraph.</p>
-	<div id="main-container"></div>
+	<div id="main-content">
+		<h1>🇰🇷 Qual o meu 명? Pareando nomes brasileiros e sul-coreanos 🇧🇷</h1>
+		<div style="width: 100%; display: flex">
+			<div class="left-div">
+				<div style="width: 100%; height: 200px; text-align: center">
+					<h2 id="kr-name-title">Nome sul-coreano</h2>
+					<!-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jimin_x_Samsung_Galaxy_August_2021.png/330px-Jimin_x_Samsung_Galaxy_August_2021.png" style="max-height: 100%; max-width: 100%;"> -->
+				</div>
+				<br>
+				<span>Nome: </span> <input class="name-input" type="text" placeholder="Park Ji-Min" id="kr-input">
+				<br>
+				<span>Gênero:</span>
+				<br>
+				<input type="radio" id="auto" value="auto" data-sync="auto" name="gender" checked>
+					<label for="auto">Automático</label>
+				</input>
+				<br>
+				<input type="radio" id="male" value="m" data-sync="m" name="gender">
+					<label for="m">Masculino</label>
+				</input>
+				<br>
+				<input type="radio" id="female" value="f" data-sync="f" name="gender">
+					<label for="f">Feminino</label>
+				</input>
+				<br><br>
+				<button onclick="translate_kr2br()">🇧🇷 ABRASILEIRAR!</button>
+			</div>
+			<div class="viz-container">
+				<svg id="svg-m-forename" class="svg-container"></svg>
+				<svg id="svg-f-forename" class="svg-container"></svg>
+				<br>
+				<svg id="svg-surname" class="svg-container"></svg>
+			</div>
+			<div class="right-div">
+				<div style="width: 100%; height: 200px; text-align: center">
+					<h2 id="br-name-title">Nome brasileiro</h2>
+					<!-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jimin_x_Samsung_Galaxy_August_2021.png/330px-Jimin_x_Samsung_Galaxy_August_2021.png" style="max-height: 100%; max-width: 100%;"> -->
+				</div>
+				<span>Nome: </span> <input class="name-input" type="text" placeholder="Felipe Neto" id="br-input">
+				<br>
+				<input type="radio" id="auto" value="auto" data-sync="auto" name="gender" checked>
+					<label for="auto">Automático</label>
+				</input>
+				<br>
+				<input type="radio" id="male" value="m" data-sync="m" name="gender">
+					<label for="m">Masculino</label>
+				</input>
+				<br>
+				<input type="radio" id="female" value="f" data-sync="f" name="gender">
+					<label for="f">Feminino</label>
+				</input>
+				<br><br>
+				<button>🇰🇷 COREANIZAR!</button>
+			</div>
+		</div>
+	</div>
 </body>
 </html>
