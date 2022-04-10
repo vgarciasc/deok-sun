@@ -1,11 +1,11 @@
 var surname_width = 650; 
 var surname_height = 300;
-var forename_width = 300;
+var forename_width = 325;
 var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
 var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
-	height_base: 1000, min_height: 15, max_height: 250}
+	height_base: 1200, min_height: 15, max_height: 300}
 
 function constrain_heights() {
 	let curr_freq = 0;
@@ -418,23 +418,40 @@ function main() {
 }
 
 function translate_kr2br() {
-	var kr_surname, kr_forename;
-	[kr_surname, kr_forename] = $("#kr-input").val().split(" ")
+	var kr_surname_str, kr_forename_str;
+	[kr_surname_str, kr_forename_str] = $("#kr-input").val().split(" ")
 	var gender = $("input[name=gender]").filter(":checked").val();
 	var lang = "kr";
 
-	$("#kr-name-title").fadeOut(() => { $("#kr-name-title").text(kr_surname + " " + kr_forename)}).fadeIn()
+	var kr_surname
+	[sr_idx, kr_surname] = find_surname(kr_surname_str, "kr");
+	[fr_idx, kr_forename] = find_forename(kr_forename_str, "kr", gender);
 
-	var br_forename = translate_forename(kr_surname, kr_forename, lang, gender).forename;
-	var br_surname = translate_surname_kr2br(kr_surname, kr_forename, gender).surname;
+	$("#kr-error-console").text("")
+	if (sr_idx == -1) {
+		var msg = `O sobrenome '${kr_surname_str}' não foi encontrado`;
+		console.error(msg)
+		$("#kr-error-console").text(msg)
+	}
+	if (fr_idx == -1) {
+		var msg = `O nome ${gender=='m'?'masculino':'feminino'} '${kr_forename_str}' não foi encontrado.`;
+		console.error(msg)
+		$("#kr-error-console").text(msg)
+	}
+
+	$("#kr-name-title").fadeOut(() => { $("#kr-name-title").text(kr_surname_str + " " + kr_forename_str)}).fadeIn()
+
+	var br_forename_str = translate_forename(kr_surname_str, kr_forename_str, lang, gender).forename;
+	var br_surname_str = translate_surname_kr2br(kr_surname_str, kr_forename_str, gender).surname;
+	var br_fullname = br_forename_str + " " + br_surname_str;
 
 	setTimeout(() => {
-		animate_forename_selection(kr_forename, lang, gender)
+		animate_forename_selection(kr_forename_str, lang, gender)
 		setTimeout(() => {
-			animate_surname_selection(kr_surname, kr_forename, lang, gender)
+			animate_surname_selection(kr_surname_str, kr_forename_str, lang, gender)
 			setTimeout(() => {
-				$("#br-input").val(br_forename + " " + br_surname);
-				$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_forename + " " + br_surname)}).fadeIn()
+				$("#br-input").val(br_fullname);
+				$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_fullname)}).fadeIn()
 			}, 5000)
 		}, 3000)
 	}, 500)
