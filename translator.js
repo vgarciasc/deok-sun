@@ -1,21 +1,47 @@
-var surname_width = 600; 
+var surname_width = 650; 
 var surname_height = 300;
 var forename_width = 300;
 var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
-var sr_bar_dim = { width: (surname_width - 60) / 2, height_base: 800, padding_y: 1, padding_x: 60 }
+var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
+	height_base: 1000, min_height: 15, max_height: 250}
+
+function constrain_heights() {
+	let curr_freq = 0;
+	for (var i = 0; i < kr_surnames.length; i++) {
+		kr_surnames[i]['y'] = curr_freq;
+		curr_freq += get_surname_height(kr_surnames[i])
+	}
+
+	curr_freq = 0;
+	for (var i = 0; i < br_surnames.length; i++) {
+		br_surnames[i]['y'] = curr_freq;
+		curr_freq += get_surname_height(br_surnames[i])
+	}
+}
 
 function get_forename_y_by_rank(rank) {
 	return rank * (fr_bar_dim.height + fr_bar_dim.padding_y);
 }
 
 function get_surname_y(entry, rank) {
-	return entry.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * rank;
+	return entry.y + sr_bar_dim.padding_y * rank;
 }
 
-function get_current_surname_y_pos() {
-	return 0;
+function get_surname_height(entry) {
+	var val = sr_bar_dim.height_base * entry.freq;
+	return Math.max(Math.min(val, sr_bar_dim.max_height), sr_bar_dim.min_height);
+}
+
+function find_surname(surname_str, lang) {
+	var list = [];
+	switch (lang) {
+		case "kr": list = kr_surnames; break;
+		case "br": list = br_surnames; break;
+	}
+	var idx = list.findIndex((f) => f.surname.toLowerCase() == surname_str.toLowerCase());
+	return [idx, list[idx]]
 }
 
 function find_forename(forename, lang, gender) {
@@ -26,7 +52,7 @@ function find_forename(forename, lang, gender) {
 		case "br_m": list = br_m_forenames; break;
 		case "br_f": list = br_f_forenames; break;
 	}
-	var idx = list.findIndex((f) => f.forename == forename);
+	var idx = list.findIndex((f) => f.forename.toLowerCase() == forename.toLowerCase());
 	return [idx, list[idx]]
 }
 
@@ -43,14 +69,13 @@ function translate_forename(surname, forename, lang, gender) {
 
 function translate_surname_kr2br(surname, forename, gender) {
 	var surname_entry, surname_idx;
-	surname_idx = kr_surnames.findIndex((f) => f.surname == surname)
-	surname_entry = kr_surnames[surname_idx]
+	[surname_idx, surname_entry] = find_surname(surname, "kr")
 
 	var forename_idx, forename_entry;
 	[forename_idx, forename_entry] = find_forename(forename, "kr", gender);
 	var forename_val = forename_idx / 1000;
 
-	var line_pos_2 = -get_surname_y(surname_entry, surname_idx) + forename_val * (sr_bar_dim.height_base * surname_entry.freq);
+	var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
 	var br_surname_idx = br_surnames.findIndex((f, i) => get_surname_y(f, i) >= Math.max(0, line_pos_2)) - 1;
 	if (br_surname_idx == -1) {
 		console.error("Could not find paired brazilian surname. Using first.")
@@ -125,17 +150,11 @@ function animate_forename_selection(forename, lang, gender) {
 
 function animate_surname_selection(surname, forename, lang, gender) {
 	var surname_entry, surname_idx;
-	if (lang == "kr") {
-		surname_idx = kr_surnames.findIndex((f) => f.surname == surname)
-		surname_entry = kr_surnames[surname_idx]
-	} else if (lang == "br") {
-		surname_idx = br_surnames.findIndex((f) => f.surname == surname)
-		surname_entry = br_surnames[surname_idx]
-	}
+	[surname_idx, surname_entry] = find_surname(surname, lang);
 
 	var forename_idx, forename_entry;
 	[forename_idx, forename_entry] = find_forename(forename, lang, gender);
-	var forename_val = forename_idx / 1000;
+	var forename_val = forename_idx / 1000; //TODO: change
 
 	$(".surname-rect.bar-selected").removeClass("bar-selected");
 	$("#surname-pairing").addClass("hidden");
@@ -143,12 +162,12 @@ function animate_surname_selection(surname, forename, lang, gender) {
 	var svg = d3.select("#svg-surname").select("g")
 	return svg.transition()
 		.duration(2000)
-		.attr("transform", `translate(0, ${-get_surname_y(surname_entry, surname_idx) + surname_height/2 - (sr_bar_dim.height_base * surname_entry.freq)/2})`)
+		.attr("transform", `translate(0, ${-get_surname_y(surname_entry, surname_idx) + surname_height/2 - get_surname_height(surname_entry)/2})`)
 		.on("end", () => {
 			$(`#${lang}-surname-${surname_idx}`).addClass("bar-selected")
 			if (lang == "kr") {
-				var line_pos_1 = -get_surname_y(surname_entry, surname_idx);
-				var line_pos_2 = -get_surname_y(surname_entry, surname_idx) + forename_val * (sr_bar_dim.height_base * surname_entry.freq);
+				var line_pos_1 = get_surname_y(surname_entry, surname_idx);
+				var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
 
 				var br_surname_idx = br_surnames.findIndex((f, i) => get_surname_y(f, i) >= line_pos_2) - 1;
 				if (br_surname_idx == -1) {
@@ -174,8 +193,8 @@ function animate_surname_selection(surname, forename, lang, gender) {
 				var kr_surname = translate_surname_br2kr(surname, forename, gender);
 				var kr_surname_idx = kr_surnames.findIndex((f) => f.surname == kr_surname.surname);
 
-				var line_pos_1 = -get_surname_y(kr_surname, kr_surname_idx);
-				var line_pos_2 = -get_surname_y(kr_surname, kr_surname_idx) + forename_val * (sr_bar_dim.height_base * surname_entry.freq);
+				var line_pos_1 = get_surname_y(kr_surname, kr_surname_idx);
+				var line_pos_2 = get_surname_y(kr_surname, kr_surname_idx) + forename_val * get_surname_height(surname);
 
 				d3.select("#surname-pairing-name").text(forename_entry.forename)
 				d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
@@ -332,17 +351,17 @@ function main() {
 					.classed("surname-rect", true)
 					.attr("id", (d, i) => `kr-surname-${i}`)
 					.attr("x", 0)
-					.attr("y", (d, i) => d.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * i)
-					.attr("height", (d, i) => d.freq * sr_bar_dim.height_base)
+					.attr("y", (d, i) => get_surname_y(d, i))
+					.attr("height", (d, i) => get_surname_height(d))
 					.attr("width", sr_bar_dim.width)
 				enter.append("text")
 					.attr("x", 20)
-					.attr("y", (d, i) => d.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * i + d.freq * sr_bar_dim.height_base / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => `(${d.freq.toFixed(3)})`)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width - 100)
-					.attr("y", (d, i) => d.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * i + d.freq * sr_bar_dim.height_base / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.surname)
 					.classed("surname-text", true)
@@ -361,17 +380,17 @@ function main() {
 					.attr("id", (d, i) => `br-surname-${i}`)
 					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x)
 					.attr("y", (d, i) => get_surname_y(d, i))
-					.attr("height", (d, i) => d.freq * sr_bar_dim.height_base)
+					.attr("height", (d) => get_surname_height(d))
 					.attr("width", sr_bar_dim.width)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x + 20)
-					.attr("y", (d, i) => d.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * i + d.freq * sr_bar_dim.height_base / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.surname)
 					.classed("surname-text", true)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x + sr_bar_dim.width - 100)
-					.attr("y", (d, i) => d.y * sr_bar_dim.height_base + sr_bar_dim.padding_y * i + d.freq * sr_bar_dim.height_base / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => `(${d.freq.toFixed(3)})`)
 			}
@@ -421,4 +440,5 @@ function translate_kr2br() {
 	}, 500)
 }
 
+constrain_heights();
 main();
