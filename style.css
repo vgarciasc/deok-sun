@@ -21,6 +21,8 @@ body {
 }
 .svg-container.faded { opacity: 0.5; }
 
+.hidden { opacity: 0; }
+
 .name-rect {
     -webkit-transition: all 0.5s ease-in-out;
     -moz-transition: all 0.5s ease-in-out;
@@ -35,15 +37,6 @@ body {
 	stroke: black;
 	stroke-width: 1;
 }
-
-#surname-pairing {
-    -webkit-transition: all 0.5s ease-in-out;
-    -moz-transition: all 0.5s ease-in-out;
-    -o-transition: all 0.5s ease-in-out;
-    -ms-transition: all 0.5s ease-in-out;
-    transition: all 0.5s ease-in-out;
-}
-#surname-pairing.hidden { opacity: 0; }
 #surname-pairing > line {
 	stroke: red;
 	stroke-width: 2;
@@ -52,6 +45,21 @@ body {
 	/*font-family: Segoe UI;
 	font-size: 12px;
 	color: red;*/
+}
+.smooth-transition {
+    -webkit-transition: all 0.5s ease-in-out;
+    -moz-transition: all 0.5s ease-in-out;
+    -o-transition: all 0.5s ease-in-out;
+    -ms-transition: all 0.5s ease-in-out;
+    transition: all 0.5s ease-in-out;
+}
+#m-forename-pairing-line {
+	stroke: #303071;
+	stroke-width: 2;
+}
+#f-forename-pairing-line {
+	stroke: #9a3131;
+	stroke-width: 2;
 }
 
 .male-forename-rect { fill: lightblue; }

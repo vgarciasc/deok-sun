@@ -10,17 +10,19 @@ var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
 var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
-	height_base: 2500, min_height: 15, max_height: surname_height}
+	height_base: 2000, min_height: 20, max_height: 999999}
 
 function constrain_heights() {
 	let curr_freq = 0;
 	for (var i = 0; i < kr_surnames.length; i++) {
+		kr_surnames[i]['freq_acc'] = kr_surnames[i]['y'];
 		kr_surnames[i]['y'] = curr_freq;
 		curr_freq += get_surname_height(kr_surnames[i])
 	}
 
 	curr_freq = 0;
 	for (var i = 0; i < br_surnames.length; i++) {
+		br_surnames[i]['freq_acc'] = br_surnames[i]['y'];
 		br_surnames[i]['y'] = curr_freq;
 		curr_freq += get_surname_height(br_surnames[i])
 	}
@@ -73,61 +75,59 @@ function translate_forename(surname, forename, lang, gender) {
 }
 
 function translate_surname_kr2br(surname, forename, gender) {
-	var surname_entry, surname_idx;
-	[surname_idx, surname_entry] = find_surname(surname, "kr")
+	var kr_surname_entry, kr_surname_idx;
+	[kr_surname_idx, kr_surname_entry] = find_surname(surname, "kr");
 
-	var forename_idx, forename_entry;
-	[forename_idx, forename_entry] = find_forename(forename, "kr", gender);
-	var forename_val = forename_idx / 1000;
-
-	var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
-	var br_surname_idx = br_surnames.findIndex((f, i) => get_surname_y(f, i) >= Math.max(0, line_pos_2)) - 1;
-	if (br_surname_idx == -1) {
-		console.error("Could not find paired brazilian surname. Using first.")
-		br_surname_idx = 0;
+	if (kr_surname_idx == -1) {
+		console.warn(`Could not find korean surname ${surname}`)
 	}
 
-	return br_surnames[br_surname_idx];
+	var kr_forename_idx, kr_forename_entry;
+	[kr_forename_idx, kr_forename_entry] = find_forename(forename, "kr", gender);
+	var forename_val = kr_forename_idx / 1000;
+
+	var kr_surname_start = kr_surname_entry.freq_acc;
+	var kr_surname_end = kr_surname_entry.freq_acc + kr_surname_entry.freq;
+	var kr_surname_pt = kr_surname_start + (kr_surname_entry.freq * forename_val);
+
+	var br_surname_entry = br_surnames.find((br) => br.freq_acc >= kr_surname_pt);
+	if (!br_surname_entry) {
+		console.warn(`Could not find paired brazilian surname for korean surname ${kr_surname_entry}`)
+	}
+
+	return br_surname_entry;
 }
 
-function translate_surname_br2kr(surname, forename, gender) {
-	var br_surname_start = 0;
-	var br_surname_end = 0;
-	var br_freq = 0;
+function translate_surname_br2kr(surname_str, forename_str, gender) {
+	var br_surname_entry, br_surname_idx;
+	[br_surname_idx, br_surname_entry] = find_surname(surname_str, "br")
 
-	for (var br_surname of br_surnames) {
-		br_surname_start += br_freq;
-		br_freq += br_surname.freq;
-		br_surname_end += br_freq;
-		
-		if (br_surname.surname == surname) {
-			break;
-		}
-	}
+	var br_surname_start = br_surname_entry.freq_acc;
+	var br_surname_end = br_surname_entry.freq_acc + br_surname_entry.freq;
 
-	var kr_forename = translate_forename(surname, forename, "br", gender)
+	var kr_forename_entry = translate_forename(surname_str, forename_str, "br", gender);
 	var kr_surname_candidates = [];
-	var kr_surname_start = 0;
-	var kr_surname_end = 0;
-	var kr_freq = 0;
 
-	for (var kr_surname of kr_surnames) {
-		kr_surname_start += kr_freq;
-		kr_freq += kr_surname.freq;
-		kr_surname_end += kr_freq;
+	for (var kr_surname_entry of kr_surnames) {
+		var kr_surname_idx = find_surname(kr_surname_entry.surname, "kr")[0]
+		var kr_surname_start = kr_surname_entry.freq_acc;
+		var kr_surname_end = kr_surname_entry.freq_acc + kr_surname_entry.freq;
 		
 		if ((kr_surname_start >= br_surname_start && kr_surname_start <= br_surname_end) ||
 			(kr_surname_end >= br_surname_start && kr_surname_end <= br_surname_end) ||
 			(br_surname_start >= kr_surname_start && br_surname_end <= kr_surname_end)) {
 			
-			kr_surname_candidates.push(kr_surname)
-			var br_surname = translate_surname_kr2br(kr_surname.surname, kr_forename.forename, gender);
-			if (br_surname.surname == surname) {
-				return kr_surname
+			kr_surname_candidates.push(kr_surname_entry)
+
+			var kr_candidate_surname_proposal = translate_surname_kr2br(kr_surname_entry.surname, kr_forename_entry.forename, gender);
+			if (kr_candidate_surname_proposal.surname == surname_str) {
+				return kr_surname_entry
 			}
 		}
 	}
-
+	
+	console.log(br_surname_entry)
+	console.log(kr_surname_candidates)
 	console.error("Could not find adequate pair.")
 	return kr_surname_candidates[0];
 }
@@ -139,14 +139,17 @@ function animate_forename_selection(forename, lang, gender) {
 	$(`.bar-selected`).removeClass("bar-selected")
 	$(`.svg-container.faded`).removeClass("faded")
 	$(`#svg-${gender == 'm' ? 'f' : 'm'}-forename`).addClass("faded")
+	$(`#${gender}-forename-pairing-line`).addClass("hidden")
 
 	return svg.transition()
 		.duration(2000)
 		.attr("transform", `translate(0, ${-get_forename_y_by_rank(idx) + forename_height/2 - fr_bar_dim.height/2})`)
 		.on("end", () => {
 			$(`#${lang}-${gender}-forename-${idx}`).addClass("bar-selected")
+			$(`#${gender}-forename-pairing-line`).removeClass("hidden")
+
 			svg.transition()
-				.duration(1000)
+				.duration(500)
 				.on("end", () => {
 					$(`#${lang == 'kr' ? 'br' : 'kr'}-${gender}-forename-${idx}`).addClass("bar-selected")
 				})
@@ -162,37 +165,40 @@ function animate_surname_selection(surname, forename, lang, gender) {
 	var forename_val = forename_idx / 1000; //TODO: change
 
 	$(".surname-rect.bar-selected").removeClass("bar-selected");
-	$("#surname-pairing").addClass("hidden");
 
-	var svg = d3.select("#svg-surname").select("g")
+	var svg = d3.select(`#${lang}-surname-bars`)
 	return svg.transition()
-		.duration(2000)
+		.duration(1000)
 		.attr("transform", `translate(0, ${-get_surname_y(surname_entry, surname_idx) + surname_height/2 - get_surname_height(surname_entry)/2})`)
 		.on("end", () => {
 			$(`#${lang}-surname-${surname_idx}`).addClass("bar-selected")
 			if (lang == "kr") {
+				var br_surname_entry = translate_surname_kr2br(surname, forename, gender);
+				var br_surname_idx = find_surname(br_surname_entry.surname, "br")[0];
+				var translate_y = - get_surname_y(br_surname_entry, br_surname_idx) - get_surname_height(br_surname_entry)/2 + surname_height/2;
+
 				var line_pos_1 = get_surname_y(surname_entry, surname_idx);
-				var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
+				var line_pos_2 = get_surname_y(surname_entry, surname_idx) + get_surname_height(surname_entry)/2;
+				// var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
 
-				var br_surname_idx = br_surnames.findIndex((f, i) => get_surname_y(f, i) >= line_pos_2) - 1;
-				if (br_surname_idx == -1) {
-					br_surname_idx = 0;
-				}
-
-				var br_surname = br_surnames[br_surname_idx];
-
-				d3.select("#surname-pairing-name").text(forename_entry.forename)
-				d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
-
-				d3.select("#surname-pairing")
-					.classed("hidden", false)
-					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+				d3.select("#br-surname-bars")
 					.transition()
 					.duration(1000)
-					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
+					.attr("transform", `translate(0, ${translate_y})`)
 					.on("end", () => {
-						$(`#br-surname-${br_surname_idx}`).addClass("bar-selected");
-					})
+						d3.select("#surname-pairing-name").text(forename)
+						d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
+
+						d3.select("#surname-pairing")
+							.classed("hidden", false)
+							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+							.transition()
+							.duration(1000)
+							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
+							.on("end", () => {
+								$(`#br-surname-${br_surname_idx}`).addClass("bar-selected");
+							})
+					});
 			}
 			else if (lang == "br") {
 				var br_surname_entry, br_surname_idx;
@@ -202,21 +208,29 @@ function animate_surname_selection(surname, forename, lang, gender) {
 				var kr_surname_entry = translate_surname_br2kr(surname, forename, gender);
 				var kr_surname_idx = find_surname(kr_surname_entry.surname, "kr")[0]
 
+				var translate_y = - get_surname_y(kr_surname_entry, kr_surname_idx) - get_surname_height(kr_surname_entry)/2 + surname_height/2;
+
 				var line_pos_1 = get_surname_y(kr_surname_entry, kr_surname_idx);
-				var line_pos_2 = get_surname_y(kr_surname_entry, kr_surname_idx) + forename_val * get_surname_height(kr_surname_entry);
+				var line_pos_2 = get_surname_y(kr_surname_entry, kr_surname_idx) + get_surname_height(kr_surname_entry)/2;
 
-				d3.select("#surname-pairing-name").text(forename)
-				d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
-
-				d3.select("#surname-pairing")
-					.classed("hidden", false)
-					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+				d3.select("#kr-surname-bars")
 					.transition()
 					.duration(1000)
-					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
+					.attr("transform", `translate(0, ${translate_y})`)
 					.on("end", () => {
-						$(`#kr-surname-${kr_surname_idx}`).addClass("bar-selected");
-					})
+						d3.select("#surname-pairing-name").text(forename)
+						d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
+
+						d3.select("#surname-pairing")
+							.classed("hidden", false)
+							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+							.transition()
+							.duration(1000)
+							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
+							.on("end", () => {
+								$(`#kr-surname-${kr_surname_idx}`).addClass("bar-selected");
+							})
+					});
 			}
 		})
 }
@@ -346,6 +360,27 @@ function main() {
 					.classed("forename-text", true)
 			}
 		)
+
+	d3.selectAll("#svg-m-forename").append("g")
+		.append("line")
+		.classed("smooth-transition", true)
+		.classed("hidden", true)
+		.attr("id", "m-forename-pairing-line")
+		.attr("x1", fr_bar_dim.width)
+		.attr("y1", forename_height/2)
+		.attr("x2", fr_bar_dim.width + fr_bar_dim.padding_x)
+		.attr("y2", forename_height/2)
+
+	d3.selectAll("#svg-f-forename").append("g")
+		.append("line")
+		.classed("smooth-transition", true)
+		.classed("hidden", true)
+		.attr("id", "f-forename-pairing-line")
+		.attr("x1", fr_bar_dim.width)
+		.attr("y1", forename_height/2)
+		.attr("x2", fr_bar_dim.width + fr_bar_dim.padding_x)
+		.attr("y2", forename_height/2)
+
 	let svg_surnames = d3.select("#svg-surname")
 		.attr("width", surname_width)
 		.attr("height", surname_height)
@@ -409,9 +444,10 @@ function main() {
 			}
 		)
 
-	var sr_pairing = svg_surnames.append("g")
+	var sr_pairing = d3.selectAll("#kr-surname-bars").append("g")
 		.attr("id", "surname-pairing")
 		.classed("hidden", true)
+		.classed("smooth-transition", true)
 		.attr("transform", `translate(${sr_bar_dim.width}, 50)`)
 	sr_pairing.append("line")
 		.attr("x1", 0)
@@ -472,7 +508,9 @@ function translate_kr2br() {
 
 function translate_br2kr() {
 	var br_surname_str, br_forename_str;
-	[br_forename_str, br_surname_str] = $("#br-input").val().split(" ")
+	var idx_f = $("#br-input").val().indexOf(" ");
+	var br_forename_str = $("#br-input").val().substring(0, idx_f);
+	var br_surname_str = $("#br-input").val().substring(idx_f + 1);
 	var gender = $("input[name=gender]").filter(":checked").val();
 	var lang = "br";
 
@@ -499,6 +537,9 @@ function translate_br2kr() {
 	var kr_fullname = kr_surname_str + " "+ kr_forename_str;
 
 	setTimeout(() => {
+		$("#m-forename-pairing-line").addClass("hidden");
+		$("#f-forename-pairing-line").addClass("hidden");
+		$("#surname-pairing").addClass("hidden");
 		animate_forename_selection(br_forename_str, lang, gender)
 		setTimeout(() => {
 			animate_surname_selection(br_surname_str, br_forename_str, lang, gender)
