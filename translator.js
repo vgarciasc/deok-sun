@@ -1,11 +1,16 @@
-var surname_width = 650; 
+kr_m_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
+kr_f_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
+
+//////////////////
+
+var surname_width = 750; 
 var surname_height = 300;
-var forename_width = 325;
+var forename_width = 375;
 var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
 var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
-	height_base: 1200, min_height: 15, max_height: 300}
+	height_base: 2500, min_height: 15, max_height: surname_height}
 
 function constrain_heights() {
 	let curr_freq = 0;
@@ -190,13 +195,17 @@ function animate_surname_selection(surname, forename, lang, gender) {
 					})
 			}
 			else if (lang == "br") {
-				var kr_surname = translate_surname_br2kr(surname, forename, gender);
-				var kr_surname_idx = kr_surnames.findIndex((f) => f.surname == kr_surname.surname);
+				var br_surname_entry, br_surname_idx;
+				[br_surname_idx, br_surname_entry] = find_surname(surname, "br")
 
-				var line_pos_1 = get_surname_y(kr_surname, kr_surname_idx);
-				var line_pos_2 = get_surname_y(kr_surname, kr_surname_idx) + forename_val * get_surname_height(surname);
+				var kr_forename_str = translate_forename(surname, forename, "br", gender).forename;
+				var kr_surname_entry = translate_surname_br2kr(surname, forename, gender);
+				var kr_surname_idx = find_surname(kr_surname_entry.surname, "kr")[0]
 
-				d3.select("#surname-pairing-name").text(forename_entry.forename)
+				var line_pos_1 = get_surname_y(kr_surname_entry, kr_surname_idx);
+				var line_pos_2 = get_surname_y(kr_surname_entry, kr_surname_idx) + forename_val * get_surname_height(kr_surname_entry);
+
+				d3.select("#surname-pairing-name").text(forename)
 				d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
 
 				d3.select("#surname-pairing")
@@ -238,10 +247,11 @@ function main() {
 					.attr("dy", "0.3em")
 					.text((d, i) => `#${i+1}`)
 				enter.append("text")
-					.attr("x", 40)
+					.attr("x", 60)
 					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.forename)
+					// .text(d => d.hangul)
 					.classed("forename-text", true)
 			}
 		)
@@ -266,7 +276,7 @@ function main() {
 					.attr("dy", "0.3em")
 					.text((d, i) => `#${i+1}`)
 				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 40)
+					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 60)
 					.attr("y", (d, i) => get_forename_y_by_rank(i) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.forename)
@@ -300,9 +310,10 @@ function main() {
 					.attr("dy", "0.3em")
 					.text((d, i) => `#${i+1}`)
 				enter.append("text")
-					.attr("x", 40)
+					.attr("x", 60)
 					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
+					// .text(d => d.hangul)
 					.text(d => d.forename)
 					.classed("forename-text", true)
 			}
@@ -328,7 +339,7 @@ function main() {
 					.attr("dy", "0.3em")
 					.text((d, i) => `#${i+1}`)
 				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 40)
+					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 60)
 					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.forename)
@@ -356,12 +367,14 @@ function main() {
 					.attr("width", sr_bar_dim.width)
 				enter.append("text")
 					.attr("x", 20)
-					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
+					// .attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => `(${d.freq.toFixed(3)})`)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width - 100)
-					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
+					// .attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.surname)
 					.classed("surname-text", true)
@@ -452,6 +465,46 @@ function translate_kr2br() {
 			setTimeout(() => {
 				$("#br-input").val(br_fullname);
 				$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_fullname)}).fadeIn()
+			}, 5000)
+		}, 3000)
+	}, 500)
+}
+
+function translate_br2kr() {
+	var br_surname_str, br_forename_str;
+	[br_forename_str, br_surname_str] = $("#br-input").val().split(" ")
+	var gender = $("input[name=gender]").filter(":checked").val();
+	var lang = "br";
+
+	var br_surname
+	[sr_idx, br_surname] = find_surname(br_surname_str, "br");
+	[fr_idx, br_forename] = find_forename(br_forename_str, "br", gender);
+
+	$("#br-error-console").text("")
+	if (sr_idx == -1) {
+		var msg = `O sobrenome '${br_surname_str}' não foi encontrado`;
+		console.error(msg)
+		$("#br-error-console").text(msg)
+	}
+	if (fr_idx == -1) {
+		var msg = `O nome ${gender=='m'?'masculino':'feminino'} '${br_forename_str}' não foi encontrado.`;
+		console.error(msg)
+		$("#br-error-console").text(msg)
+	}
+
+	$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_forename_str + " " + br_surname_str)}).fadeIn()
+
+	var kr_forename_str = translate_forename(br_surname_str, br_forename_str, lang, gender).forename;
+	var kr_surname_str = translate_surname_br2kr(br_surname_str, br_forename_str, gender).surname;
+	var kr_fullname = kr_surname_str + " "+ kr_forename_str;
+
+	setTimeout(() => {
+		animate_forename_selection(br_forename_str, lang, gender)
+		setTimeout(() => {
+			animate_surname_selection(br_surname_str, br_forename_str, lang, gender)
+			setTimeout(() => {
+				$("#kr-input").val(kr_fullname);
+				$("#kr-name-title").fadeOut(() => { $("#kr-name-title").text(kr_fullname)}).fadeIn()
 			}, 5000)
 		}, 3000)
 	}, 500)

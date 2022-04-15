@@ -9,8 +9,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 	<script src="data/kr_surnames.js"></script>
 	<script src="data/br_surnames.js"></script>
-	<script src="data/kr-m-forenames.js"></script>
-	<script src="data/kr-f-forenames.js"></script>
+	<!-- <script src="data/kr-m-forenames.js"></script>
+	<script src="data/kr-f-forenames.js"></script> -->
+	<script src="data/kr-m-forenames-hangul.js"></script>
+	<script src="data/kr-f-forenames-hangul.js"></script>
 	<script src="data/br-m-forenames.js"></script>
 	<script src="data/br-f-forenames.js"></script>
 	<script src="data.js"></script>
@@ -20,7 +22,7 @@
 </head>
 <body>
 	<div id="main-content">
-		<h1>🇰🇷 Qual o meu 명? Pareando nomes brasileiros e sul-coreanos 🇧🇷</h1>
+		<h1>🇰🇷 "Qual o meu 명?": Pareando nomes brasileiros e sul-coreanos 🇧🇷</h1>
 		<div style="width: 100%; display: flex">
 			<div class="left-div">
 				<div style="width: 100%; height: 200px; text-align: center">
@@ -74,7 +76,10 @@
 					<label for="f">Feminino</label>
 				</input>
 				<br><br>
-				<button>🇰🇷 COREANIZAR!</button>
+				<button onclick="translate_br2kr()">🇰🇷 COREANIZAR!</button>
+				<div>
+					<p id="br-error-console" style="color: red"></p>
+				</div>
 			</div>
 		</div>
 	</div>
