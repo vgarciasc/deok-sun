@@ -47,11 +47,11 @@ body {
 	color: red;*/
 }
 .smooth-transition {
-    -webkit-transition: all 0.5s ease-in-out;
+/*    -webkit-transition: all 0.5s ease-in-out;
     -moz-transition: all 0.5s ease-in-out;
     -o-transition: all 0.5s ease-in-out;
     -ms-transition: all 0.5s ease-in-out;
-    transition: all 0.5s ease-in-out;
+    transition: all 0.5s ease-in-out;*/
 }
 #m-forename-pairing-line {
 	stroke: #303071;
@@ -82,11 +82,13 @@ body {
 }
 
 .left-div, .right-div {
-	width: 30%;
 	text-align: left;
 	padding-left: 1em;
 	padding-right: 1em;
 }
+
+.left-div { width: auto; }
+.right-div { width: 30%; }
 
 .name-input {
 	padding: 5px;
@@ -113,3 +115,27 @@ button:hover {
 
 #kr-name-title::before { content: "🇰🇷 "; }
 #br-name-title::before { content: "🇧🇷 "; }
+
+.wiki-link {
+	color: grey;
+}
+
+.wiki-link:hover {
+	text-decoration: underline;
+	color: blue;
+  	cursor: pointer;
+}
+
+button {
+	width: 100%;
+	text-align: center;
+}
+
+.div-left>img {
+	width: 100%;
+}
+
+h2 {
+	margin-top: 0;
+	margin-bottom: 0;
+}

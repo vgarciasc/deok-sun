@@ -88,3 +88,33 @@
 // 	{forename: 'Ji-Ho'},
 // 	{forename: 'Jun-Seo'},
 // ]
+
+function load_wiki_thumbnail(img_src) {
+	$("#img-thumb").attr("src", img_src);
+}
+
+function load_wiki_suggestions(wikicode, fullname) {
+	$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages`, function(data) {
+		var top_3 = data.query.search.slice(0, 5);
+		var pageids = top_3.map((p) => p.pageid).join("|")
+
+		$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300`, function(data2) {
+			var thumbs = Object.values(data2.query.pages)
+				.map((p) => {return{thumbnail: p.thumbnail, title: p.title}})
+				.filter((p) => p.thumbnail)
+
+			var msg = ""
+			msg += "<b>Carregar imagem pelo nome:</b>"
+			msg += "<ul>"
+			msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
+			msg += "</ul>"
+			
+			$("#wiki-area").html(msg);
+		});
+	})
+}
+
+function clear_wiki_suggestions() {
+	$("#wiki-area").html("");
+	load_wiki_thumbnail("")
+}

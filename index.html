@@ -25,12 +25,7 @@
 		<h1>🇰🇷 "Qual o meu 명?": Pareando nomes brasileiros e sul-coreanos 🇧🇷</h1>
 		<div style="width: 100%; display: flex">
 			<div class="left-div">
-				<div style="width: 100%; text-align: center">
-					<h2 id="kr-name-title">Nome sul-coreano</h2>
-					<img width=200 src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jimin_x_Samsung_Galaxy_August_2021.png/330px-Jimin_x_Samsung_Galaxy_August_2021.png" style="max-height: 100%; max-width: 100%;">
-					<h2 id="br-name-title">Nome brasileiro</h2>
-				</div>
-				<br>
+				<br><br>
 				<span><b>Nome: </b></span> <input class="name-input" type="text" placeholder="Park Ji-Min" id="fullname-input">
 				<br>
 				<span><b>Gênero:</b></span>
@@ -47,11 +42,21 @@
 					<label for="f">Feminino</label>
 				</input>
 				<br><br>
-				<button onclick="translate('kr', 'br')">🇧🇷 ABRASILEIRAR!</button>
+				<button onclick="translate('kr', 'br')">🇧🇷 ABRASILEIRAR</button>
 				<br>
-				<button onclick="translate('br', 'kr')">🇰🇷 COREANIZAR!</button>
+				<button onclick="translate('br', 'kr')">🇰🇷 COREANIZAR</button>
 				<div>
 					<p id="error-console" style="color: red"></p>
+				</div>
+				<div>
+					<p id="wiki-area" style="color: grey"></p>
+				</div>
+			</div>
+			<div class="right-div">
+				<div style="width: 100%; text-align: center">
+					<h2 id="kr-name-title">Nome sul-coreano</h2>
+					<img id="img-thumb" src="" style="max-height: 100%; max-width: 100%;">
+					<h2 id="br-name-title">Nome brasileiro</h2>
 				</div>
 			</div>
 			<div class="viz-container">

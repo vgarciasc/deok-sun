@@ -10,11 +10,15 @@ var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
 var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
-	height_base: 10000, min_height: 20, max_height: 999999}
+	height_base: 10000, min_height: 15, max_height: 999999}
 
 function get_full_name(surname_str, forename_str, lang) {
 	if (lang == "kr") return surname_str + " " + forename_str;
 	return forename_str + " " + surname_str;
+}
+
+function get_freq_as_string(freq) {
+	return (freq * 100).toFixed(5) + "%"
 }
 
 function constrain_heights() {
@@ -211,7 +215,7 @@ function translate_surname_kr2br(surname, forename, gender) {
 
 	var kr_forename_idx, kr_forename_entry;
 	[kr_forename_idx, kr_forename_entry, _, _] = find_forename(forename, "kr", gender);
-	var forename_val = kr_forename_idx / 1000;
+	var forename_val = kr_forename_idx / kr_f_forenames.length;
 
 	var kr_surname_start = kr_surname_entry.freq_acc;
 	var kr_surname_end = kr_surname_entry.freq_acc + kr_surname_entry.freq;
@@ -541,7 +545,7 @@ function main() {
 					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
 					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
-					.text(d => `(${d.freq.toFixed(3)})`)
+					.text(d => `${get_freq_as_string(d.freq)}`)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width - 100)
 					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
@@ -577,7 +581,7 @@ function main() {
 					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x + sr_bar_dim.width - 100)
 					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
-					.text(d => `(${d.freq.toFixed(3)})`)
+					.text(d => `${get_freq_as_string(d.freq)}`)
 			}
 		)
 
@@ -623,6 +627,7 @@ function parse_name_from_input(lang) {
 
 function translate(lang_src, lang_dst) {
 	$(`#error-console`).text("")
+	clear_wiki_suggestions();
 
 	var src_surname_str, src_forename_str;
 	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
@@ -662,6 +667,8 @@ function translate(lang_src, lang_dst) {
 	var dst_forename_str = translate_forename(src_surname_str, src_forename_str, lang_src, gender).forename;
 	var dst_surname_str = translate_surname(src_surname_str, src_forename_str, lang_src, gender).surname;
 	var dst_fullname = get_full_name(dst_surname_str, dst_forename_str, lang_dst);
+
+	load_wiki_suggestions(lang_src == "br" ? "br" : "en", src_fullname);
 
 	setTimeout(() => {
 		animate_forename_selection(src_forename_str, lang_src, gender)
