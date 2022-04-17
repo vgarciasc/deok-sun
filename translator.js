@@ -604,17 +604,26 @@ function main() {
 }
 
 function parse_name_from_input(lang) {
+	var string = $("#fullname-input").val();
 	if (lang == "br") {
-		var idx_f = $("#fullname-input").val().indexOf(" ");
-		var br_forename_str = $("#fullname-input").val().substring(0, idx_f);
-		var br_surname_str = $("#fullname-input").val().substring(idx_f + 1);
-		return [br_surname_str, br_forename_str]
+		var words = string.split(" ");
+		if (words.length == 2) {
+			return [words[1], words[0]];
+		} else {
+			if (["da", "do", "das", "dos", "de"].includes(words[1].toLowerCase())) {
+				return [words.slice(1).join(" "), words[0]]
+			} else {
+				return [words.slice(2).join(" "), words[0] + " " + words[1], ]
+			}
+		}
 	} else if (lang == "kr") {
-		return $("#fullname-input").val().split(" ")
+		return string.split(" ")
 	}
 }
 
 function translate(lang_src, lang_dst) {
+	$(`#error-console`).text("")
+
 	var src_surname_str, src_forename_str;
 	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
 
@@ -622,25 +631,29 @@ function translate(lang_src, lang_dst) {
 	var gender_str = gender == "m" ? "masculino " : (gender == "f" ? "feminino " : "")
 	var fr_perfect_match;
 
+	var log = [];
+
 	var src_surname, src_forename;
 	[sr_idx, src_surname, sr_perfect_match] = find_surname(src_surname_str, lang_src);
-	[fr_idx, src_forename, gender, fr_perfect_match] = find_forename(src_forename_str, lang_src, gender);
-	var src_fullname = get_full_name(src_surname.surname, src_forename.forename, lang_src);
 
-	var msg = [];
-	$(`#error-console`).text("")
 	if (sr_idx == -1) {
-		msg.push(`O sobrenome "${src_surname_str}" não foi encontrado.`)
+		log.push(`O sobrenome "${src_surname_str}" não foi encontrado.`)
 	} else if (!sr_perfect_match) {
-		msg.push(`O sobrenome "${src_surname_str}" não foi encontrado. Usando "${src_surname.surname}".`)
+		log.push(`O sobrenome "${src_surname_str}" não foi encontrado. Usando "${src_surname.surname}".`)
 	}
+
+	[fr_idx, src_forename, gender, fr_perfect_match] = find_forename(src_forename_str, lang_src, gender);
+
+	$(`#error-console`).text("")
 	if (fr_idx == -1) {
-		msg.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado.`)
+		log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado.`)
 	} else if (!fr_perfect_match) {
-		msg.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado. Usando "${src_forename.forename}".`)
+		log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado. Usando "${src_forename.forename}".`)
 	}
-	msg.forEach((f) => console.error(f));
-	$(`#error-console`).html(msg.join("<br><br>"))
+	log.forEach((f) => console.error(f));
+	$(`#error-console`).html(log.join("<br><br>"))
+
+	var src_fullname = get_full_name(src_surname.surname, src_forename.forename, lang_src);
 
 	$(`#${lang_src}-name-title`).fadeOut(() => { 
 		$(`#${lang_src}-name-title`).text(src_fullname);
