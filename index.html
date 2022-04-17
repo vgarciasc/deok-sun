@@ -29,13 +29,14 @@
 		</h1>
 		<div style="width: 100%; display: flex">
 			<div class="left-div">
-				<br><br>
-				<span><b>Nome: </b></span> <input class="name-input" type="text" placeholder="Park Ji-Min" id="fullname-input" oninput="handle_name_input(this)" onload="update_suggestions()" onchange="update_suggestions()">
+				<!-- <p>Descubra como seria o nome do seu artista coreano favorito caso ele tivesse nascido no Brasil! Ou ainda, descubra como seria seu nome em coreano! Para saber mais sobre como o mapeamento funciona, clique <a href=".">aqui</a>. </p> -->
+				<p>Para saber como o mapeamento funciona, clique <a href=".">aqui</a>!</p>
+				<span><b>Nome: </b></span> <input class="name-input" type="text" placeholder="Park Ji-min" id="fullname-input" oninput="handle_name_input(this)" onload="update_suggestions()" onchange="update_suggestions()">
 				<br>
 				<span><b>Gênero:</b></span>
 				<br>
 				<input type="radio" id="auto" value="auto" name="gender" checked="checked">
-					<label for="auto">Automático</label>
+					<label for="auto">Assuma meu gênero</label>
 				</input>
 				<br>
 				<input type="radio" id="male" value="m" name="gender">
@@ -46,9 +47,9 @@
 					<label for="f">Feminino</label>
 				</input>
 				<br><br>
-				<button disabled onclick="translate('kr', 'br')"><img height=15 src="https://i.imgur.com/t8JbthO.png"> ABRASILEIRAR</button>
+				<button disabled onclick="translate('kr', 'br')"><img height=15 src="https://i.imgur.com/IBC6iYn.png"> ABRASILEIRAR</button>
 				<br>
-				<button disabled onclick="translate('br', 'kr')"><img height=15 src="https://i.imgur.com/IBC6iYn.png"> COREANIZAR</button>
+				<button disabled onclick="translate('br', 'kr')"><img height=15 src="https://i.imgur.com/t8JbthO.png"> COREANIZAR</button>
 				<div>
 					<p id="error-console" style="color: red"></p>
 				</div>

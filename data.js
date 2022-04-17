@@ -104,7 +104,7 @@ function handle_name_input(event) {
 
 function update_suggestions() {
 	load_wiki_thumbnail("https://i.imgur.com/cgHLMDv.png")
-	load_wiki_suggestions("en", last_typed);
+	load_wiki_suggestions("pt", last_typed);
 	last_loaded = last_typed;
 }
 
@@ -141,23 +141,31 @@ function load_wiki_suggestions(wikicode, fullname) {
 		var top_3 = data.query.search.slice(0, 5);
 		var pageids = top_3.map((p) => p.pageid).join("|")
 
-		$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300`, function(data2) {
-			var thumbs = Object.values(data2.query.pages)
-				.map((p) => {return{thumbnail: p.thumbnail, title: p.title}})
-				.filter((p) => p.thumbnail)
-
-			if (thumbs.length > 0) {
-				var msg = ""
-				msg += "<b>Carregar imagem pelo nome (opcional):</b>"
-				msg += "<ul>"
-				msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
-				msg += "</ul>"
-				
-				$("#wiki-area").html(msg);
-				toggle_buttons(true);
-			} else {
-				clear_wiki_suggestions();
+		if (data.query.search.length == 0) {
+			if (wikicode != "en") {
+				load_wiki_suggestions("en", fullname);
 			}
-		});
+		} else {
+			$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300`, function(data2) {
+				var thumbs = Object.values(data2.query.pages)
+					.map((p) => {return{thumbnail: p.thumbnail, title: p.title}})
+					.filter((p) => p.thumbnail)
+
+				if (thumbs.length > 0) {
+					var msg = ""
+					msg += "<b>Carregar imagem pelo nome (opcional):</b>"
+					msg += "<ul>"
+					msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
+					msg += "</ul>"
+					
+					$("#wiki-area").html(msg);
+					toggle_buttons(true);
+				} else {
+					if (wikicode != "en") {
+						load_wiki_suggestions("en", fullname);
+					}
+				}
+			});
+		}
 	})
 }

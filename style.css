@@ -1,14 +1,17 @@
 body {
-	/*background: bisque;*/
+	background: url("https://i.imgur.com/pxX5l5X.png");
 	font-family: Segoe UI;
 }
 
 #main-content {
-	text-align: center
+	text-align: center;
 }
 
 .viz-container {
 	width: 100%;
+	text-align: left;
+	padding-left: 1em;
+	padding-right: 1em;
 }
 
 .svg-container {
@@ -87,8 +90,8 @@ body {
 	padding-right: 1em;
 }
 
-.left-div { width: 20%; }
-.right-div { width: 30%; }
+.left-div { width: 23%; }
+.right-div { width: 35%; text-align: center; }
 
 .name-input {
 	padding: 5px;

@@ -15,7 +15,7 @@ var forename_width = 375;
 var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
-var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
+var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 90,
 	height_base: 10000, min_height: 15, max_height: 999999}
 
 function get_full_name(surname_str, forename_str, lang) {
@@ -65,7 +65,8 @@ function find_surname(surname_str, lang) {
 		case "br": list = br_surnames; break;
 	}
 	
-	var idx = list.findIndex((f) => f.surname.toLowerCase() == surname_str.toLowerCase());
+	surname_str = clean(surname_str);
+	var idx = list.findIndex((f) => clean(f.surname) == surname_str);
 	var perfect_match = (idx != -1);
 
 	if (!perfect_match) {
@@ -154,9 +155,11 @@ function find_forename(forename_str, lang, gender) {
 	[female_forename_idx, female_forename_entry, female_pmatch] = find_forename_in_list(forename_str, f_list);
 
 	if (gender == "auto") {
+		debugger;
+
 		if ((male_pmatch && female_pmatch) ||
 			(!male_pmatch && !female_pmatch && male_forename_idx != -1 && female_forename_idx != -1)) {
-			return male_forename_entry.incidence > female_forename_entry.incidence ? 
+			return male_forename_idx < female_forename_idx ? 
 				[male_forename_idx, male_forename_entry, "m", male_pmatch]
 				: [female_forename_idx, female_forename_entry, "f", female_pmatch]
 		} else if (male_pmatch) {
@@ -641,6 +644,11 @@ function translate(lang_src, lang_dst) {
 
 	var src_surname_str, src_forename_str;
 	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
+
+	if (src_surname_str == undefined || src_forename_str == undefined) {
+		$(`#error-console`).text("Por favor, insira nome e sobrenome.")
+		return;
+	}
 
 	var gender = $("input[name=gender]").filter(":checked").val();
 	var gender_str = gender == "m" ? "masculino " : (gender == "f" ? "feminino " : "")
