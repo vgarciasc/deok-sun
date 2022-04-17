@@ -89,11 +89,54 @@
 // 	{forename: 'Jun-Seo'},
 // ]
 
+var last_typing_time = (new Date()).getTime();
+var last_typed = "";
+var last_loaded = "";
+
+function toggle_buttons(value) {
+	$("button").prop("disabled", !value);
+}
+
+function handle_name_input(event) {
+	last_typing_time = (new Date()).getTime();
+	last_typed = event.value;
+}
+
+function update_suggestions() {
+	load_wiki_thumbnail("https://i.imgur.com/cgHLMDv.png")
+	load_wiki_suggestions("en", last_typed);
+	last_loaded = last_typed;
+}
+
+function clear_wiki_suggestions() {
+	$("#wiki-area").html("");
+	$("#kr-name-title").text("Nome sul-coreano")
+	$("#br-name-title").text("Nome brasileiro")
+}
+
+setInterval(function() {
+	var curr_time = (new Date()).getTime();
+	if ((curr_time - last_typing_time) / 1000 > 1 && last_loaded != last_typed) {
+		update_suggestions();
+	}
+}, 500)
+
 function load_wiki_thumbnail(img_src) {
-	$("#img-thumb").attr("src", img_src);
+	$("#img-thumb").fadeOut(500, function() {
+		$("#img-thumb").attr("src", img_src);
+	}).fadeIn();
 }
 
 function load_wiki_suggestions(wikicode, fullname) {
+	if (fullname == "") {
+		clear_wiki_suggestions();
+		load_wiki_thumbnail("https://i.imgur.com/cgHLMDv.png")
+		toggle_buttons(false);
+		return;
+	}
+
+	console.log(`Loading '${last_typed}'.`)
+
 	$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages`, function(data) {
 		var top_3 = data.query.search.slice(0, 5);
 		var pageids = top_3.map((p) => p.pageid).join("|")
@@ -103,18 +146,18 @@ function load_wiki_suggestions(wikicode, fullname) {
 				.map((p) => {return{thumbnail: p.thumbnail, title: p.title}})
 				.filter((p) => p.thumbnail)
 
-			var msg = ""
-			msg += "<b>Carregar imagem pelo nome:</b>"
-			msg += "<ul>"
-			msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
-			msg += "</ul>"
-			
-			$("#wiki-area").html(msg);
+			if (thumbs.length > 0) {
+				var msg = ""
+				msg += "<b>Carregar imagem pelo nome (opcional):</b>"
+				msg += "<ul>"
+				msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
+				msg += "</ul>"
+				
+				$("#wiki-area").html(msg);
+				toggle_buttons(true);
+			} else {
+				clear_wiki_suggestions();
+			}
 		});
 	})
-}
-
-function clear_wiki_suggestions() {
-	$("#wiki-area").html("");
-	load_wiki_thumbnail("")
 }

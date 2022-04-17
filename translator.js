@@ -95,10 +95,12 @@ function find_forename(forename_str, lang, gender) {
 
 		var forename_str = clean(forename_str);
 		var idx = list.findIndex((f) => clean(f.forename) == forename_str);
-		var perfect_match = (idx != -1);
+		var perfect_match = true;
 
-		if (!perfect_match) {
+		if (idx == -1) {
 			if (lang == "br") {
+				perfect_match = false;
+
 				// searching in alternative names
 				idx = list.findIndex((f) => f.aliases.find((a) => clean(a) == forename_str))
 
@@ -120,6 +122,8 @@ function find_forename(forename_str, lang, gender) {
 				if (idx == -1) idx = list.findIndex((f) => clean(f.rr).replace("-", "") == forename_str)
 
 				if (idx == -1) {
+					perfect_match = false;
+
 					var edit_distances = list.map((f) => Math.min(
 						editDistance(forename_str.replace("-", ""), f.forename.replace("-", "")),
 						editDistance(forename_str.replace("-", ""), f.rr.replace("-", ""))));
@@ -144,16 +148,15 @@ function find_forename(forename_str, lang, gender) {
 	[female_forename_idx, female_forename_entry, female_pmatch] = find_forename_in_list(forename_str, f_list);
 
 	if (gender == "auto") {
-		if (male_forename_idx != -1 && male_pmatch) {
-			return [male_forename_idx, male_forename_entry, "m", male_pmatch]
-		} else if (female_forename_idx != -1 && female_pmatch) {
-			return [female_forename_idx, female_forename_entry, "f", female_pmatch]
-		}
-
-		if (male_forename_idx != -1 && female_forename_idx != -1) {
+		if ((male_pmatch && female_pmatch) ||
+			(!male_pmatch && !female_pmatch && male_forename_idx != -1 && female_forename_idx != -1)) {
 			return male_forename_entry.incidence > female_forename_entry.incidence ? 
 				[male_forename_idx, male_forename_entry, "m", male_pmatch]
 				: [female_forename_idx, female_forename_entry, "f", female_pmatch]
+		} else if (male_pmatch) {
+			return [male_forename_idx, male_forename_entry, "m", male_pmatch]
+		} else if (female_pmatch) {
+			return [female_forename_idx, female_forename_entry, "f", female_pmatch]
 		}
 
 		if (female_forename_idx == -1 && male_forename_idx != -1) {
@@ -627,7 +630,8 @@ function parse_name_from_input(lang) {
 
 function translate(lang_src, lang_dst) {
 	$(`#error-console`).text("")
-	clear_wiki_suggestions();
+	$("#kr-name-title").text("Nome sul-coreano")
+	$("#br-name-title").text("Nome brasileiro")
 
 	var src_surname_str, src_forename_str;
 	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
@@ -668,7 +672,7 @@ function translate(lang_src, lang_dst) {
 	var dst_surname_str = translate_surname(src_surname_str, src_forename_str, lang_src, gender).surname;
 	var dst_fullname = get_full_name(dst_surname_str, dst_forename_str, lang_dst);
 
-	load_wiki_suggestions(lang_src == "br" ? "br" : "en", src_fullname);
+	toggle_buttons(false);
 
 	setTimeout(() => {
 		animate_forename_selection(src_forename_str, lang_src, gender)
@@ -676,6 +680,8 @@ function translate(lang_src, lang_dst) {
 			animate_surname_selection(src_surname_str, src_forename_str, lang_src, gender)
 			setTimeout(() => {
 				$(`#${lang_dst}-input`).val(dst_fullname);
+				toggle_buttons(true);
+
 				$(`#${lang_dst}-name-title`).fadeOut(() => { 
 					$(`#${lang_dst}-name-title`).text(dst_fullname)
 				}).fadeIn()

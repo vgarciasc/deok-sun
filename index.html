@@ -26,7 +26,7 @@
 		<div style="width: 100%; display: flex">
 			<div class="left-div">
 				<br><br>
-				<span><b>Nome: </b></span> <input class="name-input" type="text" placeholder="Park Ji-Min" id="fullname-input">
+				<span><b>Nome: </b></span> <input class="name-input" type="text" placeholder="Park Ji-Min" id="fullname-input" oninput="handle_name_input(this)" onload="update_suggestions()" onchange="update_suggestions()">
 				<br>
 				<span><b>Gênero:</b></span>
 				<br>
@@ -42,9 +42,9 @@
 					<label for="f">Feminino</label>
 				</input>
 				<br><br>
-				<button onclick="translate('kr', 'br')">🇧🇷 ABRASILEIRAR</button>
+				<button disabled onclick="translate('kr', 'br')">🇧🇷 ABRASILEIRAR</button>
 				<br>
-				<button onclick="translate('br', 'kr')">🇰🇷 COREANIZAR</button>
+				<button disabled onclick="translate('br', 'kr')">🇰🇷 COREANIZAR</button>
 				<div>
 					<p id="error-console" style="color: red"></p>
 				</div>
@@ -55,7 +55,7 @@
 			<div class="right-div">
 				<div style="width: 100%; text-align: center">
 					<h2 id="kr-name-title">Nome sul-coreano</h2>
-					<img id="img-thumb" src="" style="max-height: 100%; max-width: 100%;">
+					<img id="img-thumb" src="https://i.imgur.com/cgHLMDv.png" style="max-height: 100%; max-width: 100%;">
 					<h2 id="br-name-title">Nome brasileiro</h2>
 				</div>
 			</div>
