@@ -113,8 +113,16 @@ button:hover {
 	box-shadow: 0 0 40px 40px red inset;
 }*/
 
-#kr-name-title::before { content: "🇰🇷 "; }
-#br-name-title::before { content: "🇧🇷 "; }
+#kr-name-title::before { 
+	content: url("https://i.imgur.com/t8JbthO.png");
+    vertical-align: -20%;
+    padding-right: 5px;
+}
+#br-name-title::before { 
+	content: url("https://i.imgur.com/IBC6iYn.png");
+    vertical-align: -20%;
+    padding-right: 5px;
+}
 
 .wiki-link {
 	color: grey;

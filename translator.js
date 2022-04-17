@@ -1,6 +1,12 @@
 kr_m_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
 kr_f_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
 
+//performance test
+// kr_m_forenames.splice(100)
+// kr_f_forenames.splice(100)
+// br_m_forenames.splice(100)
+// br_f_forenames.splice(100)
+
 //////////////////
 
 var surname_width = 750; 
