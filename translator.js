@@ -10,7 +10,12 @@ var forename_height = 200;
 
 var fr_bar_dim = { width: (forename_width - 10) / 2, height: 30, padding_y: 1, padding_x: 10 }
 var sr_bar_dim = { width: (surname_width - 80) / 2, padding_y: 1, padding_x: 80,
-	height_base: 2000, min_height: 20, max_height: 999999}
+	height_base: 10000, min_height: 20, max_height: 999999}
+
+function get_full_name(surname_str, forename_str, lang) {
+	if (lang == "kr") return surname_str + " " + forename_str;
+	return forename_str + " " + surname_str;
+}
 
 function constrain_heights() {
 	let curr_freq = 0;
@@ -42,48 +47,170 @@ function get_surname_height(entry) {
 }
 
 function find_surname(surname_str, lang) {
+	function clean(str) { return str.toLowerCase().to_ascii() };
+
 	var list = [];
 	switch (lang) {
 		case "kr": list = kr_surnames; break;
 		case "br": list = br_surnames; break;
 	}
+	
 	var idx = list.findIndex((f) => f.surname.toLowerCase() == surname_str.toLowerCase());
-	return [idx, list[idx]]
+	var perfect_match = (idx != -1);
+
+	if (!perfect_match) {
+		var edit_distances = list.map((f) => editDistance(surname_str, f.surname));
+		idx = argmin(edit_distances);
+
+		if (edit_distances[idx] > 5) {
+			//too distant
+			idx = -1;
+		}
+	}
+
+	return [idx, list[idx], perfect_match]
 }
 
-function find_forename(forename, lang, gender) {
-	var list = [];
-	switch ((lang + "_" + gender)) {
-		case "kr_m": list = kr_m_forenames; break;
-		case "kr_f": list = kr_f_forenames; break;
-		case "br_m": list = br_m_forenames; break;
-		case "br_f": list = br_f_forenames; break;
+function find_forename(forename_str, lang, gender) {
+	var m_list = [];
+	var f_list = [];
+
+	switch (lang) {
+		case "kr":
+			m_list = kr_m_forenames;
+			f_list = kr_f_forenames;
+			break;
+		case "br":
+			m_list = br_m_forenames;
+			f_list = br_f_forenames;
+			break;
 	}
-	var idx = list.findIndex((f) => f.forename.toLowerCase() == forename.toLowerCase());
-	return [idx, list[idx]]
+
+	function find_forename_in_list(forename_str, list) {
+		function clean(str) { return str.toLowerCase().to_ascii() };
+
+		var forename_str = clean(forename_str);
+		var idx = list.findIndex((f) => clean(f.forename) == forename_str);
+		var perfect_match = (idx != -1);
+
+		if (!perfect_match) {
+			if (lang == "br") {
+				// searching in alternative names
+				idx = list.findIndex((f) => f.aliases.find((a) => clean(a) == forename_str))
+
+				// searching for closest forename
+				if (idx == -1) {
+					var edit_distances = list.map((f) => editDistance(forename_str, f.forename));
+					idx = argmin(edit_distances);
+
+					if (edit_distances[idx] > 3) {
+						//too distant
+						idx = -1;
+					}
+				}
+			}
+			if (lang == "kr") {
+				// searching without hyphen
+				idx = list.findIndex((f) => clean(f.forename).replace("-", "") == forename_str)
+				if (idx == -1) idx = list.findIndex((f) => clean(f.rr) == forename_str)
+				if (idx == -1) idx = list.findIndex((f) => clean(f.rr).replace("-", "") == forename_str)
+
+				if (idx == -1) {
+					var edit_distances = list.map((f) => Math.min(
+						editDistance(forename_str.replace("-", ""), f.forename.replace("-", "")),
+						editDistance(forename_str.replace("-", ""), f.rr.replace("-", ""))));
+					idx = argmin(edit_distances);
+
+					if (edit_distances[idx] > 10) {
+						//too distant
+						idx = -1;
+					}
+				}
+			}
+		}
+
+		return [idx, list[idx], perfect_match]
+	}
+
+	var male_forename_idx, male_forename_entry, male_pmatch;
+	var female_forename_idx, female_forename_entry, female_pmatch;
+	var forename_idx, forename_entry, pmatch;
+
+	[male_forename_idx, male_forename_entry, male_pmatch] = find_forename_in_list(forename_str, m_list);
+	[female_forename_idx, female_forename_entry, female_pmatch] = find_forename_in_list(forename_str, f_list);
+
+	if (gender == "auto") {
+		if (male_forename_idx != -1 && male_pmatch) {
+			return [male_forename_idx, male_forename_entry, "m", male_pmatch]
+		} else if (female_forename_idx != -1 && female_pmatch) {
+			return [female_forename_idx, female_forename_entry, "f", female_pmatch]
+		}
+
+		if (male_forename_idx != -1 && female_forename_idx != -1) {
+			return male_forename_entry.incidence > female_forename_entry.incidence ? 
+				[male_forename_idx, male_forename_entry, "m", male_pmatch]
+				: [female_forename_idx, female_forename_entry, "f", female_pmatch]
+		}
+
+		if (female_forename_idx == -1 && male_forename_idx != -1) {
+			forename_idx = male_forename_idx;
+			forename_entry = male_forename_entry;
+			pmatch = male_pmatch;
+			gender = "m";
+		} else if (female_forename_idx != -1 && male_forename_idx == -1) {
+			forename_idx = female_forename_idx;
+			forename_entry = female_forename_entry;
+			pmatch = female_pmatch;
+			gender = "f";
+		} else {
+			console.error("Something bad happened.")
+		}
+	}
+	else if (gender == "m") {
+		forename_idx = male_forename_idx;
+		forename_entry = male_forename_entry;
+		pmatch = male_pmatch;
+	} else if (gender == "f") {
+		forename_idx = female_forename_idx;
+		forename_entry = female_forename_entry;
+		pmatch = female_pmatch;
+	}
+
+	return [forename_idx, forename_entry, gender, pmatch]
 }
 
 function translate_forename(surname, forename, lang, gender) {
-	var list = [];
-	switch ((lang + "_" + gender)) {
-		case "kr_m": list = br_m_forenames; break;
-		case "kr_f": list = br_f_forenames; break;
-		case "br_m": list = kr_m_forenames; break;
-		case "br_f": list = kr_f_forenames; break;
+	switch (lang) {
+		case "kr":
+			m_list = br_m_forenames;
+			f_list = br_f_forenames;
+			break;
+		case "br":
+			m_list = kr_m_forenames;
+			f_list = kr_f_forenames;
+			break;
 	}
-	return list[find_forename(forename, lang, gender)[0]];
+
+	var forename_idx, forename_entry, gender, pmatch;
+	[forename_idx, forename_entry, gender, pmatch] = find_forename(forename, lang, gender);
+
+	if (lang == "br") {
+		return gender == "m" ? kr_m_forenames[forename_idx] : kr_f_forenames[forename_idx];
+	} else {
+		return gender == "m" ? br_m_forenames[forename_idx] : br_f_forenames[forename_idx];
+	}
 }
 
 function translate_surname_kr2br(surname, forename, gender) {
 	var kr_surname_entry, kr_surname_idx;
-	[kr_surname_idx, kr_surname_entry] = find_surname(surname, "kr");
+	[kr_surname_idx, kr_surname_entry, _] = find_surname(surname, "kr");
 
 	if (kr_surname_idx == -1) {
 		console.warn(`Could not find korean surname ${surname}`)
 	}
 
 	var kr_forename_idx, kr_forename_entry;
-	[kr_forename_idx, kr_forename_entry] = find_forename(forename, "kr", gender);
+	[kr_forename_idx, kr_forename_entry, _, _] = find_forename(forename, "kr", gender);
 	var forename_val = kr_forename_idx / 1000;
 
 	var kr_surname_start = kr_surname_entry.freq_acc;
@@ -100,7 +227,7 @@ function translate_surname_kr2br(surname, forename, gender) {
 
 function translate_surname_br2kr(surname_str, forename_str, gender) {
 	var br_surname_entry, br_surname_idx;
-	[br_surname_idx, br_surname_entry] = find_surname(surname_str, "br")
+	[br_surname_idx, br_surname_entry, _] = find_surname(surname_str, "br")
 
 	var br_surname_start = br_surname_entry.freq_acc;
 	var br_surname_end = br_surname_entry.freq_acc + br_surname_entry.freq;
@@ -132,6 +259,14 @@ function translate_surname_br2kr(surname_str, forename_str, gender) {
 	return kr_surname_candidates[0];
 }
 
+function translate_surname(surname_str, forename_str, lang, gender) {
+	if (lang == "kr") {
+		return translate_surname_kr2br(surname_str, forename_str, gender)
+	} else {
+		return translate_surname_br2kr(surname_str, forename_str, gender)
+	}
+}
+
 function animate_forename_selection(forename, lang, gender) {
 	var idx = find_forename(forename, lang, gender)[0];
 	var svg = d3.select(`#svg-${gender}-forename`).select("g");
@@ -158,10 +293,10 @@ function animate_forename_selection(forename, lang, gender) {
 
 function animate_surname_selection(surname, forename, lang, gender) {
 	var surname_entry, surname_idx;
-	[surname_idx, surname_entry] = find_surname(surname, lang);
+	[surname_idx, surname_entry, _] = find_surname(surname, lang);
 
 	var forename_idx, forename_entry;
-	[forename_idx, forename_entry] = find_forename(forename, lang, gender);
+	[forename_idx, forename_entry, _, _] = find_forename(forename, lang, gender);
 	var forename_val = forename_idx / 1000; //TODO: change
 
 	$(".surname-rect.bar-selected").removeClass("bar-selected");
@@ -202,7 +337,7 @@ function animate_surname_selection(surname, forename, lang, gender) {
 			}
 			else if (lang == "br") {
 				var br_surname_entry, br_surname_idx;
-				[br_surname_idx, br_surname_entry] = find_surname(surname, "br")
+				[br_surname_idx, br_surname_entry, _] = find_surname(surname, "br")
 
 				var kr_forename_str = translate_forename(surname, forename, "br", gender).forename;
 				var kr_surname_entry = translate_surname_br2kr(surname, forename, gender);
@@ -388,6 +523,7 @@ function main() {
 
 	svg_surnames.append("g")
 		.attr("id", "kr-surname-bars")
+		.attr("transform", `translate(0, -${get_surname_y(kr_surnames[0], 0) + get_surname_height(kr_surnames[0]) / 2 - surname_height / 2})`)
 		.selectAll("rect")
 		.data(kr_surnames)
 		.join(
@@ -402,14 +538,14 @@ function main() {
 					.attr("width", sr_bar_dim.width)
 				enter.append("text")
 					.attr("x", 20)
-					.attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
-					// .attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
+					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => `(${d.freq.toFixed(3)})`)
 				enter.append("text")
 					.attr("x", sr_bar_dim.width - 100)
-					.attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
-					// .attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
+					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
+					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.surname)
 					.classed("surname-text", true)
@@ -418,6 +554,7 @@ function main() {
 
 	svg_surnames.append("g")
 		.attr("id", "br-surname-bars")
+		.attr("transform", `translate(0, -${get_surname_y(br_surnames[0], 0) + get_surname_height(br_surnames[0]) / 2 - surname_height / 2})`)
 		.selectAll("rect")
 		.data(br_surnames)
 		.join(
@@ -466,86 +603,62 @@ function main() {
 		.text("#5")
 }
 
-function translate_kr2br() {
-	var kr_surname_str, kr_forename_str;
-	[kr_surname_str, kr_forename_str] = $("#kr-input").val().split(" ")
-	var gender = $("input[name=gender]").filter(":checked").val();
-	var lang = "kr";
-
-	var kr_surname
-	[sr_idx, kr_surname] = find_surname(kr_surname_str, "kr");
-	[fr_idx, kr_forename] = find_forename(kr_forename_str, "kr", gender);
-
-	$("#kr-error-console").text("")
-	if (sr_idx == -1) {
-		var msg = `O sobrenome '${kr_surname_str}' não foi encontrado`;
-		console.error(msg)
-		$("#kr-error-console").text(msg)
+function parse_name_from_input(lang) {
+	if (lang == "br") {
+		var idx_f = $("#fullname-input").val().indexOf(" ");
+		var br_forename_str = $("#fullname-input").val().substring(0, idx_f);
+		var br_surname_str = $("#fullname-input").val().substring(idx_f + 1);
+		return [br_surname_str, br_forename_str]
+	} else if (lang == "kr") {
+		return $("#fullname-input").val().split(" ")
 	}
-	if (fr_idx == -1) {
-		var msg = `O nome ${gender=='m'?'masculino':'feminino'} '${kr_forename_str}' não foi encontrado.`;
-		console.error(msg)
-		$("#kr-error-console").text(msg)
-	}
-
-	$("#kr-name-title").fadeOut(() => { $("#kr-name-title").text(kr_surname_str + " " + kr_forename_str)}).fadeIn()
-
-	var br_forename_str = translate_forename(kr_surname_str, kr_forename_str, lang, gender).forename;
-	var br_surname_str = translate_surname_kr2br(kr_surname_str, kr_forename_str, gender).surname;
-	var br_fullname = br_forename_str + " " + br_surname_str;
-
-	setTimeout(() => {
-		animate_forename_selection(kr_forename_str, lang, gender)
-		setTimeout(() => {
-			animate_surname_selection(kr_surname_str, kr_forename_str, lang, gender)
-			setTimeout(() => {
-				$("#br-input").val(br_fullname);
-				$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_fullname)}).fadeIn()
-			}, 5000)
-		}, 3000)
-	}, 500)
 }
 
-function translate_br2kr() {
-	var br_surname_str, br_forename_str;
-	var idx_f = $("#br-input").val().indexOf(" ");
-	var br_forename_str = $("#br-input").val().substring(0, idx_f);
-	var br_surname_str = $("#br-input").val().substring(idx_f + 1);
+function translate(lang_src, lang_dst) {
+	var src_surname_str, src_forename_str;
+	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
+
 	var gender = $("input[name=gender]").filter(":checked").val();
-	var lang = "br";
+	var gender_str = gender == "m" ? "masculino " : (gender == "f" ? "feminino " : "")
+	var fr_perfect_match;
 
-	var br_surname
-	[sr_idx, br_surname] = find_surname(br_surname_str, "br");
-	[fr_idx, br_forename] = find_forename(br_forename_str, "br", gender);
+	var src_surname, src_forename;
+	[sr_idx, src_surname, sr_perfect_match] = find_surname(src_surname_str, lang_src);
+	[fr_idx, src_forename, gender, fr_perfect_match] = find_forename(src_forename_str, lang_src, gender);
+	var src_fullname = get_full_name(src_surname.surname, src_forename.forename, lang_src);
 
-	$("#br-error-console").text("")
+	var msg = [];
+	$(`#error-console`).text("")
 	if (sr_idx == -1) {
-		var msg = `O sobrenome '${br_surname_str}' não foi encontrado`;
-		console.error(msg)
-		$("#br-error-console").text(msg)
+		msg.push(`O sobrenome "${src_surname_str}" não foi encontrado.`)
+	} else if (!sr_perfect_match) {
+		msg.push(`O sobrenome "${src_surname_str}" não foi encontrado. Usando "${src_surname.surname}".`)
 	}
 	if (fr_idx == -1) {
-		var msg = `O nome ${gender=='m'?'masculino':'feminino'} '${br_forename_str}' não foi encontrado.`;
-		console.error(msg)
-		$("#br-error-console").text(msg)
+		msg.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado.`)
+	} else if (!fr_perfect_match) {
+		msg.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado. Usando "${src_forename.forename}".`)
 	}
+	msg.forEach((f) => console.error(f));
+	$(`#error-console`).html(msg.join("<br><br>"))
 
-	$("#br-name-title").fadeOut(() => { $("#br-name-title").text(br_forename_str + " " + br_surname_str)}).fadeIn()
+	$(`#${lang_src}-name-title`).fadeOut(() => { 
+		$(`#${lang_src}-name-title`).text(src_fullname);
+	}).fadeIn()
 
-	var kr_forename_str = translate_forename(br_surname_str, br_forename_str, lang, gender).forename;
-	var kr_surname_str = translate_surname_br2kr(br_surname_str, br_forename_str, gender).surname;
-	var kr_fullname = kr_surname_str + " "+ kr_forename_str;
+	var dst_forename_str = translate_forename(src_surname_str, src_forename_str, lang_src, gender).forename;
+	var dst_surname_str = translate_surname(src_surname_str, src_forename_str, lang_src, gender).surname;
+	var dst_fullname = get_full_name(dst_surname_str, dst_forename_str, lang_dst);
 
 	setTimeout(() => {
-		$("#m-forename-pairing-line").addClass("hidden");
-		$("#f-forename-pairing-line").addClass("hidden");
-		$("#surname-pairing").addClass("hidden");
-		animate_forename_selection(br_forename_str, lang, gender)
+		animate_forename_selection(src_forename_str, lang_src, gender)
 		setTimeout(() => {
-			animate_surname_selection(br_surname_str, br_forename_str, lang, gender)
+			animate_surname_selection(src_surname_str, src_forename_str, lang_src, gender)
 			setTimeout(() => {
-				$("#kr-input").val(kr_fullname);
-				$("#kr-name-title").fadeOut(() => { $("#kr-name-title").text(kr_fullname)}).fadeIn()
+				$(`#${lang_dst}-input`).val(dst_fullname);
+				$(`#${lang_dst}-name-title`).fadeOut(() => { 
+					$(`#${lang_dst}-name-title`).text(dst_fullname)
+				}).fadeIn()
 			}, 5000)
 		}, 3000)
 	}, 500)
