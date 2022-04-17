@@ -139,7 +139,9 @@ function load_wiki_suggestions(wikicode, fullname) {
 
 	$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages`, function(data) {
 		var top_3 = data.query.search.slice(0, 5);
+		console.log(top_3);
 		var pageids = top_3.map((p) => p.pageid).join("|")
+		console.log(pageids);
 
 		if (data.query.search.length == 0) {
 			if (wikicode != "en") {
@@ -148,14 +150,20 @@ function load_wiki_suggestions(wikicode, fullname) {
 		} else {
 			$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300`, function(data2) {
 				var thumbs = Object.values(data2.query.pages)
-					.map((p) => {return{thumbnail: p.thumbnail, title: p.title}})
+					.map((p) => {return{thumbnail: p.thumbnail, id: p.pageid, title: p.title}})
 					.filter((p) => p.thumbnail)
 
 				if (thumbs.length > 0) {
 					var msg = ""
 					msg += "<b>Carregar imagem pelo nome (opcional):</b>"
 					msg += "<ul>"
-					msg += thumbs.map((f) => `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${f.thumbnail.source}')">${f.title}</a></li>`).join("")
+					msg += top_3.map((f) => {
+						var thumb = thumbs.find((t) => t.id == f.pageid);
+						if (thumb) {
+							return `<li><a class='wiki-link' onclick="load_wiki_thumbnail('${thumb.thumbnail.source}')">${thumb.title}</a></li>`
+						}
+						return ""
+					}).join("")
 					msg += "</ul>"
 					
 					$("#wiki-area").html(msg);
