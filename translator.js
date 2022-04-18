@@ -390,6 +390,8 @@ function main() {
 	let svg_m_forenames = d3.select("#svg-m-forename")
 		.attr("width", forename_width)
 		.attr("height", forename_height)
+		// .attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
+		.attr("preserveAspectRatio", "xMidYMid meet")
 		.append("g")
 
 	svg_m_forenames.append("g")
@@ -637,7 +639,7 @@ function parse_name_from_input(lang) {
 	}
 }
 
-function translate(lang_src, lang_dst) {
+function translate_name(lang_src, lang_dst) {
 	$(`#error-console`).text("")
 	$("#kr-name-title").text("Nome sul-coreano")
 	$("#br-name-title").text("Nome brasileiro")

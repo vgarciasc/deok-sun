@@ -16,11 +16,6 @@ body {
 
 .svg-container {
 	/*border: solid 1px black;*/
-    -webkit-transition: all 0.5s ease-in-out;
-    -moz-transition: all 0.5s ease-in-out;
-    -o-transition: all 0.5s ease-in-out;
-    -ms-transition: all 0.5s ease-in-out;
-    transition: all 0.5s ease-in-out;
 }
 .svg-container.faded { opacity: 0.5; }
 
@@ -90,8 +85,20 @@ body {
 	padding-right: 1em;
 }
 
+.big-div {
+	width: 100%;
+	display: flex;
+}
+
 .left-div { width: 23%; }
 .right-div { width: 35%; text-align: center; }
+
+@media(max-width: 800px) {
+	.big-div { display: block; }
+	.div-left { width: auto; }
+	.div-right { width: auto; }
+	.viz-container { width: auto; }
+}
 
 .name-input {
 	padding: 5px;
