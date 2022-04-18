@@ -92,12 +92,18 @@ body {
 
 .left-div { width: 23%; }
 .right-div { width: 35%; text-align: center; }
+#svg-m-forename { width: 48%; }
+#svg-f-forename { width: 48%; }
+#svg-surname { width: 96%; }
 
 @media(max-width: 800px) {
 	.big-div { display: block; }
-	.div-left { width: auto; }
-	.div-right { width: auto; }
+	.left-div { width: auto; }
+	.right-div { width: auto; }
 	.viz-container { width: auto; }
+	#svg-m-forename { width: 100%; }
+	#svg-f-forename { width: 100%; }
+	#svg-surname { width: 100%; }
 }
 
 .name-input {

@@ -388,9 +388,9 @@ function animate_surname_selection(surname, forename, lang, gender) {
 
 function main() {
 	let svg_m_forenames = d3.select("#svg-m-forename")
-		.attr("width", forename_width)
-		.attr("height", forename_height)
-		// .attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
+		// .attr("width", forename_width)
+		// .attr("height", forename_height)
+		.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
 		.attr("preserveAspectRatio", "xMidYMid meet")
 		.append("g")
 
@@ -453,8 +453,9 @@ function main() {
 
 	let svg_f_forenames = d3.select("#svg-f-forename")
 		.classed("forename-view", true)
-		.attr("width", forename_width)
-		.attr("height", forename_height)
+		// .attr("width", forename_width)
+		// .attr("height", forename_height)
+		.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
 		.append("g")
 
 	svg_f_forenames.append("g")
@@ -535,8 +536,9 @@ function main() {
 		.attr("y2", forename_height/2)
 
 	let svg_surnames = d3.select("#svg-surname")
-		.attr("width", surname_width)
-		.attr("height", surname_height)
+		// .attr("width", surname_width)
+		// .attr("height", surname_height)
+		.attr("viewBox", `0 0 ${surname_width} ${surname_height}`)
 		.append("g")
 
 	svg_surnames.append("g")
