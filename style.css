@@ -95,6 +95,7 @@ body {
 #svg-m-forename { width: 48%; }
 #svg-f-forename { width: 48%; }
 #svg-surname { width: 96%; }
+.mobile-only { display: none; }
 
 @media(max-width: 800px) {
 	.big-div { display: block; }
@@ -104,6 +105,7 @@ body {
 	#svg-m-forename { width: 100%; }
 	#svg-f-forename { width: 100%; }
 	#svg-surname { width: 100%; }
+	.mobile-only { display: block; }
 }
 
 .name-input {
