@@ -9,6 +9,10 @@ String.prototype.to_ascii = function() {
 	return this.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 };
 
+String.prototype.capitalize = function() {
+	return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 function editDistance(s1, s2) {
   s1 = s1.toLowerCase().to_ascii();
   s2 = s2.toLowerCase().to_ascii();

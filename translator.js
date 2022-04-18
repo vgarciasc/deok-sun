@@ -680,7 +680,7 @@ function translate_name(lang_src, lang_dst) {
 	log.forEach((f) => console.error(f));
 	$(`#error-console`).html(log.join("<br><br>"))
 
-	var src_fullname = get_full_name(src_surname.surname, src_forename.forename, lang_src);
+	var src_fullname = get_full_name(src_surname_str.capitalize(), src_forename_str.capitalize(), lang_src);
 
 	$(`#${lang_src}-name-title`).fadeOut(() => { 
 		$(`#${lang_src}-name-title`).text(src_fullname);
@@ -693,9 +693,9 @@ function translate_name(lang_src, lang_dst) {
 	toggle_buttons(false);
 
 	setTimeout(() => {
-		animate_forename_selection(src_forename_str, lang_src, gender)
+		animate_forename_selection(src_forename.forename, lang_src, gender)
 		setTimeout(() => {
-			animate_surname_selection(src_surname_str, src_forename_str, lang_src, gender)
+			animate_surname_selection(src_surname.surname, src_forename.forename, lang_src, gender)
 			setTimeout(() => {
 				$(`#${lang_dst}-input`).val(dst_fullname);
 				toggle_buttons(true);

@@ -135,7 +135,7 @@ function load_wiki_suggestions(wikicode, fullname) {
 		return;
 	}
 
-	console.log(`Loading '${last_typed}'.`)
+	console.log(`Loading '${last_typed}' from ${wikicode} wikipedia.`)
 
 	fetch(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages&origin=*`, { mode: 'cors' })
 	.then(response => response.json())
@@ -145,10 +145,8 @@ function load_wiki_suggestions(wikicode, fullname) {
 		var pageids = top_3.map((p) => p.pageid).join("|")
 		console.log(pageids);
 
-		if (data.query.search.length == 0) {
-			if (wikicode != "en") {
-				load_wiki_suggestions("en", fullname);
-			}
+		if (wikicode != "en" && data.query.search.length == 0) {
+			load_wiki_suggestions("en", fullname);
 		} else {
 			fetch(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300&origin=*`, { mode: 'cors' })
 			.then(response => response.json())
