@@ -137,7 +137,9 @@ function load_wiki_suggestions(wikicode, fullname) {
 
 	console.log(`Loading '${last_typed}'.`)
 
-	$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages`, function(data) {
+	fetch(`https://${wikicode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${fullname}&format=json&prop=pageimages&origin=*`, { mode: 'cors' })
+	.then(response => response.json())
+	.then(data => {
 		var top_3 = data.query.search.slice(0, 5);
 		console.log(top_3);
 		var pageids = top_3.map((p) => p.pageid).join("|")
@@ -148,7 +150,9 @@ function load_wiki_suggestions(wikicode, fullname) {
 				load_wiki_suggestions("en", fullname);
 			}
 		} else {
-			$.get(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300`, function(data2) {
+			fetch(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300&origin=*`, { mode: 'cors' })
+			.then(response => response.json())
+			.then((data2) => {
 				var thumbs = Object.values(data2.query.pages)
 					.map((p) => {return{thumbnail: p.thumbnail, id: p.pageid, title: p.title}})
 					.filter((p) => p.thumbnail)
