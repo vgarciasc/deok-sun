@@ -295,7 +295,7 @@ let br_f_forenames = [{"forename": "Maria", "incidence": 11694738, "aliases": ["
 {"forename": "Cleuza", "incidence": 49893, "aliases": ["Celeuza", "Cileusa", "Cileuza", "Cleusa", "Kleusa", "Kleuza"]}, 
 {"forename": "Lucimara", "incidence": 49699, "aliases": ["Lucymara"]}, 
 {"forename": "Tamara", "incidence": 49093, "aliases": ["Tammara", "Thamara"]}, 
-{"forename": "Gláúcia", "incidence": 49022, "aliases": ["Glaucya"]}, 
+{"forename": "Glaucia", "incidence": 49022, "aliases": ["Glaucya"]}, 
 {"forename": "Ligia", "incidence": 48911, "aliases": ["Aligia", "Eligia", "Ligya", "Lijia", "Luigia", "Lygia"]}, 
 {"forename": "Nubia", "incidence": 48527, "aliases": ["Nubya", "Nudia"]}, 
 {"forename": "Noemia", "incidence": 48383, "aliases": [""]}, 

@@ -151,9 +151,12 @@ function load_wiki_suggestions(wikicode, fullname) {
 			fetch(`https://${wikicode}.wikipedia.org/w/api.php?action=query&pageids=${pageids}&prop=pageimages&format=json&pithumbsize=300&origin=*`, { mode: 'cors' })
 			.then(response => response.json())
 			.then((data2) => {
-				var thumbs = Object.values(data2.query.pages)
-					.map((p) => {return{thumbnail: p.thumbnail, id: p.pageid, title: p.title}})
-					.filter((p) => p.thumbnail)
+				var thumbs = []
+				if (data2.query) {
+					thumbs = Object.values(data2.query.pages)
+						.map((p) => {return{thumbnail: p.thumbnail, id: p.pageid, title: p.title}})
+						.filter((p) => p.thumbnail)
+				}
 
 				if (thumbs.length > 0) {
 					var msg = ""
@@ -169,12 +172,13 @@ function load_wiki_suggestions(wikicode, fullname) {
 					msg += "</ul>"
 					
 					$("#wiki-area").html(msg);
-					toggle_buttons(true);
 				} else {
 					if (wikicode != "en") {
 						load_wiki_suggestions("en", fullname);
 					}
 				}
+				
+				toggle_buttons(true);
 			});
 		}
 	})

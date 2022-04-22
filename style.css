@@ -74,7 +74,7 @@ body {
 	stroke-width: 1;
 }
 
-.surname-text, .forename-text {
+.text-surname, .text-forename {
 	font-family: Georgia;
 	font-weight: bold;
 }

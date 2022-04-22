@@ -1,11 +1,25 @@
 kr_m_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
 kr_f_forenames.forEach((f) => { f.forename = f.forename.charAt(0).toUpperCase() + f.forename.slice(1) })
 
+kr_m_forenames.forEach((f, i) => f['rank'] = i);
+br_m_forenames.forEach((f, i) => f['rank'] = i);
+kr_f_forenames.forEach((f, i) => f['rank'] = i);
+br_f_forenames.forEach((f, i) => f['rank'] = i);
+
 //performance test
 // kr_m_forenames.splice(100)
 // kr_f_forenames.splice(100)
 // br_m_forenames.splice(100)
 // br_f_forenames.splice(100)
+
+let kr_m_forenames_viewbox = kr_m_forenames.slice(0, 50);
+let kr_f_forenames_viewbox = kr_f_forenames.slice(0, 50);
+let br_m_forenames_viewbox = br_m_forenames.slice(0, 50);
+let br_f_forenames_viewbox = br_f_forenames.slice(0, 50);
+
+let current_m_forename_idx = 0;
+let current_f_forename_idx = 0;
+let recent_forename_idxs = [0];
 
 //////////////////
 
@@ -155,8 +169,6 @@ function find_forename(forename_str, lang, gender) {
 	[female_forename_idx, female_forename_entry, female_pmatch] = find_forename_in_list(forename_str, f_list);
 
 	if (gender == "auto") {
-		debugger;
-
 		if ((male_pmatch && female_pmatch) ||
 			(!male_pmatch && !female_pmatch && male_forename_idx != -1 && female_forename_idx != -1)) {
 			return male_forename_idx < female_forename_idx ? 
@@ -291,6 +303,46 @@ function animate_forename_selection(forename, lang, gender) {
 	$(`.svg-container.faded`).removeClass("faded")
 	$(`#svg-${gender == 'm' ? 'f' : 'm'}-forename`).addClass("faded")
 	$(`#${gender}-forename-pairing-line`).addClass("hidden")
+	$(`#surname-pairing`).addClass("hidden")
+
+	if (gender == "m") { 
+		recent_forename_idxs.push(current_m_forename_idx);
+		current_m_forename_idx = idx
+	} else { 
+		recent_forename_idxs.push(current_f_forename_idx);
+		current_f_forename_idx = idx
+	};
+
+	recent_forename_idxs.push(idx);
+	if (recent_forename_idxs.length > 4) {
+		recent_forename_idxs = recent_forename_idxs.slice(1);
+	}
+	console.log("Recent forename idxs: ")
+	console.log(recent_forename_idxs)
+
+	var idxs_to_show = [];
+	for (var recent_forename_idx of recent_forename_idxs) {
+		var min = Math.max(recent_forename_idx - 100, 0);
+		var max = Math.min(recent_forename_idx + 100, kr_m_forenames.length);
+		for (var i = min; i < max; i++) {
+			idxs_to_show.push(i);
+		}
+		for (var i = 0; i < min; i += 50) {
+			idxs_to_show.push(i);
+		}
+	}
+
+	if (gender == "m") {
+		kr_m_forenames_viewbox = kr_m_forenames.filter((_, i) => idxs_to_show.includes(i));
+		br_m_forenames_viewbox = br_m_forenames.filter((_, i) => idxs_to_show.includes(i));
+		update_forenames(kr_m_forenames_svg, kr_m_forenames_viewbox, "m", "kr")
+		update_forenames(br_m_forenames_svg, br_m_forenames_viewbox, "m", "br")
+	} else {
+		kr_f_forenames_viewbox = kr_f_forenames.filter((_, i) => idxs_to_show.includes(i));
+		br_f_forenames_viewbox = br_f_forenames.filter((_, i) => idxs_to_show.includes(i));
+		update_forenames(kr_f_forenames_svg, kr_f_forenames_viewbox, "f", "kr")
+		update_forenames(br_f_forenames_svg, br_f_forenames_viewbox, "f", "br")
+	}
 
 	return svg.transition()
 		.duration(2000)
@@ -332,6 +384,9 @@ function animate_surname_selection(surname, forename, lang, gender) {
 				var line_pos_2 = get_surname_y(surname_entry, surname_idx) + get_surname_height(surname_entry)/2;
 				// var line_pos_2 = get_surname_y(surname_entry, surname_idx) + forename_val * get_surname_height(surname_entry);
 
+				d3.select("#surname-pairing")
+					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+
 				d3.select("#br-surname-bars")
 					.transition()
 					.duration(1000)
@@ -339,10 +394,9 @@ function animate_surname_selection(surname, forename, lang, gender) {
 					.on("end", () => {
 						d3.select("#surname-pairing-name").text(forename)
 						d3.select("#surname-pairing-ranking").text("#" + (forename_idx+1))
-
+						
 						d3.select("#surname-pairing")
 							.classed("hidden", false)
-							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
 							.transition()
 							.duration(1000)
 							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
@@ -364,6 +418,9 @@ function animate_surname_selection(surname, forename, lang, gender) {
 				var line_pos_1 = get_surname_y(kr_surname_entry, kr_surname_idx);
 				var line_pos_2 = get_surname_y(kr_surname_entry, kr_surname_idx) + get_surname_height(kr_surname_entry)/2;
 
+				d3.select("#surname-pairing")
+					.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
+
 				d3.select("#kr-surname-bars")
 					.transition()
 					.duration(1000)
@@ -374,9 +431,8 @@ function animate_surname_selection(surname, forename, lang, gender) {
 
 						d3.select("#surname-pairing")
 							.classed("hidden", false)
-							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_1})`)
 							.transition()
-							.duration(1000)
+							.duration(500)
 							.attr("transform", `translate(${sr_bar_dim.width}, ${line_pos_2})`)
 							.on("end", () => {
 								$(`#kr-surname-${kr_surname_idx}`).addClass("bar-selected");
@@ -386,242 +442,205 @@ function animate_surname_selection(surname, forename, lang, gender) {
 		})
 }
 
-function main() {
-	let svg_m_forenames = d3.select("#svg-m-forename")
-		// .attr("width", forename_width)
-		// .attr("height", forename_height)
-		.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
-		.attr("preserveAspectRatio", "xMidYMid meet")
-		.append("g")
-
-	svg_m_forenames.append("g")
-		.attr("id", "kr-forename-bars")
-		.selectAll("rect")
-		.data(kr_m_forenames)
+function update_forenames(svg, forename_data, gender, lang) {
+	svg.selectAll("g")
+		.data(forename_data, (d) => d.rank)
 		.join(
 			enter => {
-				enter.append("rect")
+				var group = enter.append("g");
+
+				group.append("line")
+					.attr("stroke", "white")
+					.attr("stroke-width", 2)
+					.attr("x1", (_) => {
+						if (lang == "kr") {
+							return 0;
+						} else {
+							return fr_bar_dim.width + fr_bar_dim.padding_x;
+						}
+					})
+					.attr("y1", (d, i) => get_forename_y_by_rank(d.rank) + fr_bar_dim.height)
+					.attr("x2", (_) => {
+						if (lang == "kr") {
+							return fr_bar_dim.width;
+						} else {
+							return 2 * fr_bar_dim.width + fr_bar_dim.padding_x;
+						}
+					})
+					.attr("y2", (d, i) => get_forename_y_by_rank(d.rank) + fr_bar_dim.height)
+				group.append("rect")
 					.classed("name-rect", true)
-					.classed("male-forename-rect", true)
-					.attr("id", (d, i) => `kr-m-forename-${i}`)
-					.attr("x", 0)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y))
+					.classed(`${gender == 'm' ? 'male' : 'female'}-forename-rect`, true)
+					.attr("id", (d, i) => `${lang}-${gender}-forename-${d.rank}`)
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return 0;
+						} else {
+							return fr_bar_dim.width + fr_bar_dim.padding_x;
+						}
+					})
+					.attr("y", (d, i) => get_forename_y_by_rank(d.rank))
 					.attr("height", fr_bar_dim.height)
 					.attr("width", fr_bar_dim.width)
-				enter.append("text")
-					.attr("x", 10)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
+				group.append("text")
+					.classed("text-rank", true)
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return 10;
+						} else {
+							return fr_bar_dim.width + fr_bar_dim.padding_x + 10;
+						}
+					})
+					.attr("y", (d, i) => get_forename_y_by_rank(d.rank) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
-					.text((d, i) => `#${i+1}`)
-				enter.append("text")
-					.attr("x", 60)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
+					.text((d, i) => `#${d.rank+1}`)
+				group.append("text")
+					.classed("text-forename", true)
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return 60;
+						} else {
+							return fr_bar_dim.width + fr_bar_dim.padding_x + 60;
+						}
+					})
+					.attr("y", (d, i) => get_forename_y_by_rank(d.rank) + fr_bar_dim.height / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.forename)
 					// .text(d => d.hangul)
-					.classed("forename-text", true)
+
+				return group;
 			}
 		)
+}
 
-	svg_m_forenames.append("g")
-		.attr("id", "br-forename-bars")
-		.selectAll("rect")
-		.data(br_m_forenames)
-		.join(
-			enter => {
-				enter.append("rect")
-					.classed("name-rect", true)
-					.classed("male-forename-rect", true)
-					.attr("id", (d, i) => `br-m-forename-${i}`)
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x)
-					.attr("y", (d, i) => get_forename_y_by_rank(i))
-					.attr("height", fr_bar_dim.height)
-					.attr("width", fr_bar_dim.width)
-				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 10)
-					.attr("y", (d, i) => get_forename_y_by_rank(i) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					.text((d, i) => `#${i+1}`)
-				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 60)
-					.attr("y", (d, i) => get_forename_y_by_rank(i) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					.text(d => d.forename)
-					.classed("forename-text", true)
+function add_forename_bg(svg, data, lang, gender) {
+	svg.append("rect")
+		.classed("name-rect", true)
+		.classed(`${gender == 'm' ? 'male' : 'female'}-forename-rect`, true)
+		.attr("x", (_) => {
+			if (lang == "kr") {
+				return 0;
+			} else {
+				return fr_bar_dim.width + fr_bar_dim.padding_x;
 			}
-		)
+		})
+		.attr("y", 0)
+		.attr("width", fr_bar_dim.width)
+		.attr("height", get_forename_y_by_rank(data.length - 1));	
+}
 
-	let svg_f_forenames = d3.select("#svg-f-forename")
-		.classed("forename-view", true)
-		// .attr("width", forename_width)
-		// .attr("height", forename_height)
-		.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
-		.append("g")
-
-	svg_f_forenames.append("g")
-		.attr("id", "kr-forename-bars")
-		.selectAll("rect")
-		.data(kr_f_forenames)
+function update_surnames(svg, surname_data, lang) {
+	svg.attr("transform", `translate(0, -${get_surname_y(surname_data[0], 0) + get_surname_height(surname_data[0]) / 2 - surname_height / 2})`)
+		.selectAll(".surname-bar")
+		.data(surname_data)
 		.join(
 			enter => {
-				enter.append("rect")
-					.classed("name-rect", true)
-					.classed("female-forename-rect", true)
-					.attr("id", (d, i) => `kr-f-forename-${i}`)
-					.attr("x", 0)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y))
-					.attr("height", fr_bar_dim.height)
-					.attr("width", fr_bar_dim.width)
-				enter.append("text")
-					.attr("x", 10)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					.text((d, i) => `#${i+1}`)
-				enter.append("text")
-					.attr("x", 60)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					// .text(d => d.hangul)
-					.text(d => d.forename)
-					.classed("forename-text", true)
-			}
-		)
+				var group = enter.append("g").classed("surname-bar", true);
 
-	svg_f_forenames.append("g")
-		.attr("id", "br-forename-bars")
-		.selectAll("rect")
-		.data(br_f_forenames)
-		.join(
-			enter => {
-				enter.append("rect")
-					.classed("name-rect", true)
-					.classed("female-forename-rect", true)
-					.attr("id", (d, i) => `br-f-forename-${i}`)
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y))
-					.attr("height", fr_bar_dim.height)
-					.attr("width", fr_bar_dim.width)
-				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 10)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					.text((d, i) => `#${i+1}`)
-				enter.append("text")
-					.attr("x", fr_bar_dim.width + fr_bar_dim.padding_x + 60)
-					.attr("y", (d, i) => i * (fr_bar_dim.height + fr_bar_dim.padding_y) + fr_bar_dim.height / 2)
-					.attr("dy", "0.3em")
-					.text(d => d.forename)
-					.classed("forename-text", true)
-			}
-		)
-
-	d3.selectAll("#svg-m-forename").append("g")
-		.append("line")
-		.classed("smooth-transition", true)
-		.classed("hidden", true)
-		.attr("id", "m-forename-pairing-line")
-		.attr("x1", fr_bar_dim.width)
-		.attr("y1", forename_height/2)
-		.attr("x2", fr_bar_dim.width + fr_bar_dim.padding_x)
-		.attr("y2", forename_height/2)
-
-	d3.selectAll("#svg-f-forename").append("g")
-		.append("line")
-		.classed("smooth-transition", true)
-		.classed("hidden", true)
-		.attr("id", "f-forename-pairing-line")
-		.attr("x1", fr_bar_dim.width)
-		.attr("y1", forename_height/2)
-		.attr("x2", fr_bar_dim.width + fr_bar_dim.padding_x)
-		.attr("y2", forename_height/2)
-
-	let svg_surnames = d3.select("#svg-surname")
-		// .attr("width", surname_width)
-		// .attr("height", surname_height)
-		.attr("viewBox", `0 0 ${surname_width} ${surname_height}`)
-		.append("g")
-
-	svg_surnames.append("g")
-		.attr("id", "kr-surname-bars")
-		.attr("transform", `translate(0, -${get_surname_y(kr_surnames[0], 0) + get_surname_height(kr_surnames[0]) / 2 - surname_height / 2})`)
-		.selectAll("rect")
-		.data(kr_surnames)
-		.join(
-			enter => {
-				enter.append("rect")
+				group.append("rect")
 					.classed("name-rect", true)
 					.classed("surname-rect", true)
-					.attr("id", (d, i) => `kr-surname-${i}`)
-					.attr("x", 0)
+					.attr("id", (d, i) => `${lang}-surname-${i}`)
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return 0;
+						} else {
+							return sr_bar_dim.width + sr_bar_dim.padding_x;
+						}
+					})
 					.attr("y", (d, i) => get_surname_y(d, i))
 					.attr("height", (d, i) => get_surname_height(d))
 					.attr("width", sr_bar_dim.width)
-				enter.append("text")
-					.attr("x", 20)
+				group.append("text")
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return 20;
+						} else {
+							return sr_bar_dim.width + sr_bar_dim.padding_x + sr_bar_dim.width - 100;
+						}
+					})
 					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
 					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => `${get_freq_as_string(d.freq)}`)
-				enter.append("text")
-					.attr("x", sr_bar_dim.width - 100)
+				group.append("text")
+					.attr("x", (_) => {
+						if (lang == "kr") {
+							return sr_bar_dim.width - 100;
+						} else {
+							return sr_bar_dim.width + sr_bar_dim.padding_x + 20;
+						}
+					})
 					// .attr("y", (d, i) => get_surname_y(d, i) + (Math.min(surname_height, get_surname_height(d))) / 2)
 					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
 					.attr("dy", "0.3em")
 					.text(d => d.surname)
-					.classed("surname-text", true)
+					.classed("text-surname", true)
+
+				return group;
 			}
 		)
-
-	svg_surnames.append("g")
-		.attr("id", "br-surname-bars")
-		.attr("transform", `translate(0, -${get_surname_y(br_surnames[0], 0) + get_surname_height(br_surnames[0]) / 2 - surname_height / 2})`)
-		.selectAll("rect")
-		.data(br_surnames)
-		.join(
-			enter => {
-				enter.append("rect")
-					.classed("name-rect", true)
-					.classed("surname-rect", true)
-					.attr("id", (d, i) => `br-surname-${i}`)
-					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x)
-					.attr("y", (d, i) => get_surname_y(d, i))
-					.attr("height", (d) => get_surname_height(d))
-					.attr("width", sr_bar_dim.width)
-				enter.append("text")
-					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x + 20)
-					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
-					.attr("dy", "0.3em")
-					.text(d => d.surname)
-					.classed("surname-text", true)
-				enter.append("text")
-					.attr("x", sr_bar_dim.width + sr_bar_dim.padding_x + sr_bar_dim.width - 100)
-					.attr("y", (d, i) => get_surname_y(d, i) + get_surname_height(d) / 2)
-					.attr("dy", "0.3em")
-					.text(d => `${get_freq_as_string(d.freq)}`)
-			}
-		)
-
-	var sr_pairing = d3.selectAll("#kr-surname-bars").append("g")
-		.attr("id", "surname-pairing")
-		.classed("hidden", true)
-		.classed("smooth-transition", true)
-		.attr("transform", `translate(${sr_bar_dim.width}, 50)`)
-	sr_pairing.append("line")
-		.attr("x1", 0)
-		.attr("y1", 0)
-		.attr("x2", sr_bar_dim.padding_x)
-		.attr("y2", 0)
-	sr_pairing.append("text")
-		.attr("id", "surname-pairing-name")
-		.attr("x", 5)
-		.attr("dy", "-0.5em")
-		.text("Da-mi")
-	sr_pairing.append("text")
-		.attr("id", "surname-pairing-ranking")
-		.attr("x", 5)
-		.attr("dy", "1.2em")
-		.text("#5")
 }
+
+let m_forenames_svg = d3.select("#svg-m-forename")
+	.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
+	.attr("preserveAspectRatio", "xMidYMid meet")
+	.append("g")
+
+let f_forenames_svg = d3.select("#svg-f-forename")
+	.attr("viewBox", `0 0 ${forename_width} ${forename_height}`)
+	.attr("preserveAspectRatio", "xMidYMid meet")
+	.append("g")
+
+for (var gender of ['m', 'f']) {
+	d3.select(`#svg-${gender}-forename`)
+		.append("line")
+		.classed("smooth-transition", true)
+		.classed("hidden", true)
+		.attr("id", `${gender}-forename-pairing-line`)
+		.attr("x1", fr_bar_dim.width)
+		.attr("y1", forename_height/2)
+		.attr("x2", fr_bar_dim.width + fr_bar_dim.padding_x)
+		.attr("y2", forename_height/2)
+}
+
+let kr_m_forenames_svg = m_forenames_svg.append("g").attr("id", "kr-m-forename-bars")
+let br_m_forenames_svg = m_forenames_svg.append("g").attr("id", "br-m-forename-bars")
+let kr_f_forenames_svg = f_forenames_svg.append("g").attr("id", "kr-f-forename-bars")
+let br_f_forenames_svg = f_forenames_svg.append("g").attr("id", "br-f-forename-bars")
+
+add_forename_bg(kr_m_forenames_svg, kr_m_forenames, 'kr', 'm')
+add_forename_bg(br_m_forenames_svg, br_m_forenames, 'br', 'm')
+add_forename_bg(kr_f_forenames_svg, kr_f_forenames, 'kr', 'f')
+add_forename_bg(br_f_forenames_svg, br_f_forenames, 'br', 'f')
+
+let svg_surnames = d3.select("#svg-surname")
+	.attr("viewBox", `0 0 ${surname_width} ${surname_height}`)
+	.append("g")
+
+let kr_surnames_svg = svg_surnames.append("g").attr("id", "kr-surname-bars")
+let br_surnames_svg = svg_surnames.append("g").attr("id", "br-surname-bars")
+
+var sr_pairing = kr_surnames_svg.append("g")
+	.attr("id", "surname-pairing")
+	.classed("hidden", true)
+	.classed("smooth-transition", true)
+	.attr("transform", `translate(${sr_bar_dim.width}, 50)`)
+sr_pairing.append("line")
+	.attr("x1", 0)
+	.attr("y1", 0)
+	.attr("x2", sr_bar_dim.padding_x)
+	.attr("y2", 0)
+sr_pairing.append("text")
+	.attr("id", "surname-pairing-name")
+	.attr("x", 5)
+	.attr("dy", "-0.5em")
+	.text("Da-mi")
+sr_pairing.append("text")
+	.attr("id", "surname-pairing-ranking")
+	.attr("x", 5)
+	.attr("dy", "1.2em")
+	.text("#5")
 
 function parse_name_from_input(lang) {
 	var string = $("#fullname-input").val();
@@ -650,7 +669,7 @@ function translate_name(lang_src, lang_dst) {
 	[src_surname_str, src_forename_str] = parse_name_from_input(lang_src);
 
 	if (src_surname_str == undefined || src_forename_str == undefined) {
-		$(`#error-console`).text("Por favor, insira nome e sobrenome.")
+		$(`#error-console`).text("Por favor, use o formato [Nome Sobrenome] para português, e [Sobrenome Nome] para coreano.")
 		return;
 	}
 
@@ -666,16 +685,21 @@ function translate_name(lang_src, lang_dst) {
 	if (sr_idx == -1) {
 		log.push(`O sobrenome "${src_surname_str}" não foi encontrado.`)
 	} else if (!sr_perfect_match) {
-		log.push(`O sobrenome "${src_surname_str}" não foi encontrado. Usando "${src_surname.surname}".`)
+		log.push(`O sobrenome "${src_surname_str}" não foi encontrado, usando o mais próximo: "${src_surname.surname}".`)
 	}
 
 	[fr_idx, src_forename, gender, fr_perfect_match] = find_forename(src_forename_str, lang_src, gender);
 
 	$(`#error-console`).text("")
-	if (fr_idx == -1) {
-		log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado.`)
+	if (fr_idx == undefined) {
+		if (src_forename_str.split(" ").length > 1) {
+			$(`#error-console`).text(["Por favor, use o formato [Nome Sobrenome] para português, e [Sobrenome Nome] para coreano."]);
+			return;
+		} else {
+			log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado.`)
+		}
 	} else if (!fr_perfect_match) {
-		log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado. Usando "${src_forename.forename}".`)
+		log.push(`O nome ${gender_str}"${src_forename_str}" não foi encontrado. Usando o mais próximo: "${src_forename.forename}".`)
 	}
 	log.forEach((f) => console.error(f));
 	$(`#error-console`).html(log.join("<br><br>"))
@@ -709,4 +733,10 @@ function translate_name(lang_src, lang_dst) {
 }
 
 constrain_heights();
-main();
+
+update_forenames(kr_m_forenames_svg, kr_m_forenames_viewbox, "m", "kr")
+update_forenames(kr_f_forenames_svg, kr_f_forenames_viewbox, "f", "kr")
+update_forenames(br_m_forenames_svg, br_m_forenames_viewbox, "m", "br")
+update_forenames(br_f_forenames_svg, br_f_forenames_viewbox, "f", "br")
+update_surnames(kr_surnames_svg, kr_surnames, "kr")
+update_surnames(br_surnames_svg, br_surnames, "br")
