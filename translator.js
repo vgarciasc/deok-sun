@@ -41,6 +41,10 @@ function get_freq_as_string(freq) {
 	return (freq * 100).toFixed(5) + "%"
 }
 
+function get_forename_val(rank) {
+	return Math.min(1, (rank + 1) / 1000);
+}
+
 function constrain_heights() {
 	let curr_freq = 0;
 	for (var i = 0; i < kr_surnames.length; i++) {
@@ -239,13 +243,18 @@ function translate_surname_kr2br(surname, forename, gender) {
 
 	var kr_forename_idx, kr_forename_entry;
 	[kr_forename_idx, kr_forename_entry, _, _] = find_forename(forename, "kr", gender);
-	var forename_val = kr_forename_idx / kr_f_forenames.length;
+	var forename_val = get_forename_val(kr_forename_idx);
 
 	var kr_surname_start = kr_surname_entry.freq_acc;
 	var kr_surname_end = kr_surname_entry.freq_acc + kr_surname_entry.freq;
 	var kr_surname_pt = kr_surname_start + (kr_surname_entry.freq * forename_val);
 
-	var br_surname_entry = br_surnames.find((br) => br.freq_acc >= kr_surname_pt);
+	var br_surname_idx = br_surnames.findIndex((br) => br.freq_acc >= kr_surname_pt) - 1;
+	var br_surname_entry = br_surnames[br_surname_idx];
+	if (kr_surname_pt > br_surnames[br_surnames.length - 1].freq_acc) {
+		br_surname_entry = br_surnames[br_surnames.length - 1];
+	}
+
 	if (!br_surname_entry) {
 		console.warn(`Could not find paired brazilian surname for korean surname ${kr_surname_entry}`)
 	}
@@ -365,7 +374,7 @@ function animate_surname_selection(surname, forename, lang, gender) {
 
 	var forename_idx, forename_entry;
 	[forename_idx, forename_entry, _, _] = find_forename(forename, lang, gender);
-	var forename_val = forename_idx / 1000; //TODO: change
+	var forename_val = get_forename_val(forename_idx);
 
 	$(".surname-rect.bar-selected").removeClass("bar-selected");
 
