@@ -643,7 +643,7 @@ sr_pairing.append("text")
 	.text("#5")
 
 function parse_name_from_input(lang) {
-	var string = $("#fullname-input").val();
+	var string = $("#fullname-input").val().trim();
 	if (lang == "br") {
 		var words = string.split(" ");
 		if (words.length == 2) {
