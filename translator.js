@@ -91,7 +91,7 @@ function find_surname(surname_str, lang) {
 		var edit_distances = list.map((f) => editDistance(surname_str, f.surname));
 		idx = argmin(edit_distances);
 
-		if (edit_distances[idx] > 5) {
+		if (edit_distances[idx] > 15) {
 			//too distant
 			idx = -1;
 		}
@@ -134,7 +134,7 @@ function find_forename(forename_str, lang, gender) {
 					var edit_distances = list.map((f) => editDistance(forename_str, f.forename));
 					idx = argmin(edit_distances);
 
-					if (edit_distances[idx] > 3) {
+					if (edit_distances[idx] > 15) {
 						//too distant
 						idx = -1;
 					}
@@ -154,7 +154,7 @@ function find_forename(forename_str, lang, gender) {
 						editDistance(forename_str.replace("-", ""), f.rr.replace("-", ""))));
 					idx = argmin(edit_distances);
 
-					if (edit_distances[idx] > 10) {
+					if (edit_distances[idx] > 15) {
 						//too distant
 						idx = -1;
 					}
@@ -265,6 +265,8 @@ function translate_surname_kr2br(surname, forename, gender) {
 function translate_surname_br2kr(surname_str, forename_str, gender) {
 	var br_surname_entry, br_surname_idx;
 	[br_surname_idx, br_surname_entry, _] = find_surname(surname_str, "br")
+	var br_forename_entry, br_forename_idx;
+	[br_forename_idx, br_forename_entry, _] = find_forename(forename_str, "br", gender)
 
 	var br_surname_start = br_surname_entry.freq_acc;
 	var br_surname_end = br_surname_entry.freq_acc + br_surname_entry.freq;
@@ -293,7 +295,24 @@ function translate_surname_br2kr(surname_str, forename_str, gender) {
 	console.log(br_surname_entry)
 	console.log(kr_surname_candidates)
 	console.error("Could not find adequate pair.")
-	return kr_surname_candidates[0];
+
+	var forename_val = get_forename_val(br_forename_idx);
+	var br_surname_start = br_surname_entry.freq_acc;
+	var br_surname_end = br_surname_entry.freq_acc + br_surname_entry.freq;
+	var br_surname_pt = br_surname_start + (br_surname_entry.freq * forename_val);
+
+	var kr_surname_idx = kr_surnames.findIndex((kr) => kr.freq_acc >= br_surname_pt) - 1;
+	var kr_surname_entry = kr_surnames[kr_surname_idx];
+	if (br_surname_pt > kr_surnames[kr_surnames.length - 1].freq_acc) {
+		kr_surname_entry = kr_surnames[kr_surnames.length - 1];
+	}
+
+	console.log("Candidates were:")
+	console.log(kr_surname_candidates);
+	console.log(`Selected in point ${br_surname_start} + (${br_surname_entry.freq} * ${forename_val}) = ${br_surname_pt}:`)
+	console.log(kr_surname_entry)
+
+	return kr_surname_entry;
 }
 
 function translate_surname(surname_str, forename_str, lang, gender) {
