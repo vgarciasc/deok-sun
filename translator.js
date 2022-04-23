@@ -667,7 +667,11 @@ function parse_name_from_input(lang) {
 			}
 		}
 	} else if (lang == "kr") {
-		return [string.split(" ")[0], string.split(" ").slice(1).join("-")]
+		if (string.split(" ").length > 1) {
+			return [string.split(" ")[0], string.split(" ").slice(1).join("-")]
+		} else {
+			return [string, undefined]
+		}
 	}
 }
 
