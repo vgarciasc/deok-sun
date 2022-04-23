@@ -953,7 +953,6 @@ let br_surnames = [{"surname":"da Silva","incidence":12585868,"freq":0.077098342
 {"surname":"Negreiros","incidence":10805,"freq":0.00006618912524739985,"y":0.9968595419409934},
 {"surname":"Natividade","incidence":10791,"freq":0.00006610336423365958,"y":0.9969257310662407},
 {"surname":"Rebelo","incidence":10756,"freq":0.00006588896169930891,"y":0.9969918344304743},
-{"surname":"António","incidence":10752,"freq":0.00006586445855252598,"y":0.9970577233921737},
 {"surname":"Calisto","incidence":10733,"freq":0.00006574806860530704,"y":0.9971235878507262},
 {"surname":"Terto","incidence":10699,"freq":0.0000655397918576521,"y":0.9971893359193315},
 {"surname":"Joaquim","incidence":10684,"freq":0.0000654479050572161,"y":0.9972548757111891},
