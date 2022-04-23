@@ -657,6 +657,8 @@ function parse_name_from_input(lang) {
 		var words = string.split(" ");
 		if (words.length == 2) {
 			return [words[1], words[0]];
+		} else if (words.length == 1) {
+			return [words[0], undefined]
 		} else {
 			if (["da", "do", "das", "dos", "de"].includes(words[1].toLowerCase())) {
 				return [words.slice(1).join(" "), words[0]]
@@ -665,7 +667,7 @@ function parse_name_from_input(lang) {
 			}
 		}
 	} else if (lang == "kr") {
-		return string.split(" ")
+		return [string.split(" ")[0], string.split(" ").slice(1).join("-")]
 	}
 }
 
@@ -700,8 +702,8 @@ function translate_name(lang_src, lang_dst) {
 	[fr_idx, src_forename, gender, fr_perfect_match] = find_forename(src_forename_str, lang_src, gender);
 
 	$(`#error-console`).text("")
-	if (fr_idx == undefined) {
-		if (src_forename_str.split(" ").length > 1) {
+	if (fr_idx == undefined || fr_idx == -1) {
+		if (src_forename_str.split(" ").length > 1 || src_forename_str.split(" ").length == 1) {
 			$(`#error-console`).text(["Por favor, use o formato [Nome Sobrenome] para português, e [Sobrenome Nome] para coreano."]);
 			return;
 		} else {
